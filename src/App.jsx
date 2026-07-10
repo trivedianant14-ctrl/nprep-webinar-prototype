@@ -1,100 +1,65 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Landing from './screens/Landing'
 import StudentApp from './screens/student/StudentApp'
 import AdminPanel from './screens/cms/AdminPanel'
 import SharedLinkFlow from './screens/sharedlink/SharedLinkFlow'
-import {
-  INITIAL_SESSIONS, DISCOUNT_PER_ACTION, SESSION_DISCOUNT_CAP, PROGRAM_DISCOUNT_CAP,
-} from './data/webinarData'
 
-function nowLabel() {
-  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+async function api(path, { method = 'GET', body } = {}) {
+  const res = await fetch(`/api${path}`, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || `Request failed (${res.status})`)
+  }
+  return res.status === 204 ? null : res.json()
 }
 
 export default function App() {
   const [topScreen, setTopScreen] = useState('landing') // landing | student | cms | sharedlink
-
-  const [sessions, setSessions] = useState(INITIAL_SESSIONS)
-  const [registeredWebinarIds, setRegisteredWebinarIds] = useState(() => new Set())
-  const [webinarMidSessionIds, setWebinarMidSessionIds] = useState(() => new Set())
-  const [webinarActions, setWebinarActions] = useState({}) // { [sessionId]: { studyMaterial, liveAttendance, quiz } }
-  const [webinarFollowUps, setWebinarFollowUps] = useState([])
+  const [state, setState] = useState(null)
   const [isPaidUser, setIsPaidUser] = useState(false)
-  const [notificationLog, setNotificationLog] = useState([])
+  const [error, setError] = useState(null)
 
-  const logNotification = (kind, title, body) => {
-    setNotificationLog(prev => [...prev, { kind, title, body, time: nowLabel() }])
-  }
-
-  // ── CMS handlers ──
-  const updateSession = (id, patch, meta = {}) => {
-    setSessions(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)))
-    if (meta.statusChanged && patch.status === 'cancelled') {
-      const session = sessions.find(s => s.id === id)
-      const count = session?.registeredStudents.length ?? 0
-      logNotification('cancel', 'Cancellation pushed to registered students', `${count} student(s) notified that "${session?.topic}" has been cancelled.`)
-      logNotification('alert', 'Internal faculty alert', `${session?.host} notified: their session "${session?.topic}" was cancelled.`)
+  const refresh = useCallback(async () => {
+    try {
+      const data = await api('/state')
+      setState(data)
+      setError(null)
+    } catch (e) {
+      setError(e.message)
     }
-    if (meta.dateChanged) {
-      const session = sessions.find(s => s.id === id)
-      const count = session?.registeredStudents.length ?? 0
-      logNotification('cancel', 'Reschedule pushed to registered students', `${count} student(s) notified of the new date/time for "${session?.topic}".`)
-      logNotification('alert', 'Internal faculty alert', `${session?.host} notified of the reschedule for "${session?.topic}".`)
-    }
-  }
+  }, [])
 
-  const createSession = (session) => setSessions(prev => [...prev, session])
+  useEffect(() => { refresh() }, [refresh])
 
-  const simulateReminder = (session, kind) => {
-    if (kind === 'T-24h') logNotification('reminder', 'T-24h reminder sent', `Push + WhatsApp sent to ${session.registeredStudents.length} registered student(s) for "${session.topic}".`)
-    if (kind === 'T-1h') logNotification('reminder', 'T-1h reminder sent', `Push + WhatsApp sent to ${session.registeredStudents.length} registered student(s) for "${session.topic}".`)
-    if (kind === 'broadcast') logNotification('reminder', 'Broadcast: "You missed it" (P1 experiment)', `Push sent to all app users who never registered for "${session.topic}" — marketing evaluates performance.`)
-  }
-
-  // ── Student handlers ──
-  const registerWebinar = (session) => {
-    setRegisteredWebinarIds(prev => new Set(prev).add(session.id))
-    if (session.status === 'live') {
-      setWebinarMidSessionIds(prev => new Set(prev).add(session.id))
-    }
-  }
-
-  const joinWebinarLive = (session) => {
-    if (!registeredWebinarIds.has(session.id)) registerWebinar(session)
-  }
-
-  const setWebinarAction = (sessionId, action, value = true) => {
-    setWebinarActions(prev => ({ ...prev, [sessionId]: { ...prev[sessionId], [action]: value } }))
-  }
-
-  const completeStudyMaterial = (sessionId) => {
-    if (webinarMidSessionIds.has(sessionId)) return
-    setWebinarAction(sessionId, 'studyMaterial')
-  }
-
-  const endWebinarLive = (session, { watchedEnough, viaYoutubeDirect }) => {
-    if (watchedEnough && !viaYoutubeDirect) setWebinarAction(session.id, 'liveAttendance')
-    // Without this, the session stays status:'live' forever — the Webinar tab would keep
-    // showing "LIVE NOW / Join Now" for a session the student just finished.
-    updateSession(session.id, { status: 'completed' })
-    logNotification('reminder', 'Post-session push fired', `Registered students for "${session.topic}" were pushed back to the post-session screen.`)
-  }
-
-  const completeWebinarQuiz = (sessionId) => setWebinarAction(sessionId, 'quiz')
-
-  const submitWebinarFollowUp = (sessionId, text) => {
-    setWebinarFollowUps(prev => [...prev, { sessionId, text, submittedAt: Date.now() }])
-  }
-
-  const webinarDiscountPct = Math.min(
-    PROGRAM_DISCOUNT_CAP,
-    Object.values(webinarActions).reduce((sum, actions) => {
-      const earned = Object.values(actions).filter(Boolean).length * DISCOUNT_PER_ACTION
-      return sum + Math.min(SESSION_DISCOUNT_CAP, earned)
-    }, 0)
-  )
+  // Every mutation hits the backend, then re-hydrates from /api/state — simplest correct
+  // approach at this scale, and it means the CMS and student flows are always reading the
+  // same server-computed truth (discount %, notification log, registration state).
+  const updateSession = async (id, patch) => { await api(`/sessions/${id}`, { method: 'PATCH', body: patch }); await refresh() }
+  const createSession = async () => { const created = await api('/sessions', { method: 'POST' }); await refresh(); return created }
+  const registerWebinar = async (session) => { await api(`/sessions/${session.id}/register`, { method: 'POST' }); await refresh() }
+  const joinWebinarLive = async (session) => { await api(`/sessions/${session.id}/register`, { method: 'POST' }); await refresh() }
+  const completeStudyMaterial = async (sessionId) => { await api(`/sessions/${sessionId}/action`, { method: 'POST', body: { action: 'studyMaterial' } }); await refresh() }
+  const endWebinarLive = async (session, opts) => { await api(`/sessions/${session.id}/end-live`, { method: 'POST', body: opts }); await refresh() }
+  const completeWebinarQuiz = async (sessionId) => { await api(`/sessions/${sessionId}/action`, { method: 'POST', body: { action: 'quiz' } }); await refresh() }
+  const submitWebinarFollowUp = async (sessionId, text) => { await api(`/sessions/${sessionId}/followup`, { method: 'POST', body: { text } }); await refresh() }
+  const simulateReminder = async (session, kind) => { await api(`/sessions/${session.id}/reminder`, { method: 'POST', body: { kind } }) ; await refresh() }
 
   const exitToLanding = () => setTopScreen('landing')
+
+  if (!state) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', color: error ? '#791F1F' : '#5a5a78', fontSize: 14, padding: 24, textAlign: 'center' }}>
+        {error ? `Couldn't reach the backend: ${error}` : 'Loading…'}
+      </div>
+    )
+  }
+
+  const registeredWebinarIds = new Set(state.registeredSessionIds)
+  const webinarMidSessionIds = new Set(state.midSessionIds)
 
   return (
     <div className="desktop-wrapper">
@@ -103,13 +68,14 @@ export default function App() {
       {topScreen === 'student' && (
         <div className="phone-wrapper">
           <StudentApp
-            sessions={sessions}
+            sessions={state.sessions}
             registeredWebinarIds={registeredWebinarIds}
             webinarMidSessionIds={webinarMidSessionIds}
-            webinarActions={webinarActions}
+            webinarActions={state.actionsBySession}
             isPaidUser={isPaidUser}
             toggleIsPaidUser={() => setIsPaidUser(p => !p)}
-            webinarDiscountPct={webinarDiscountPct}
+            webinarDiscountPct={state.discountPct}
+            programCap={state.programCap}
             onRegister={registerWebinar}
             onJoinLive={joinWebinarLive}
             onCompleteStudyMaterial={completeStudyMaterial}
@@ -123,10 +89,10 @@ export default function App() {
 
       {topScreen === 'cms' && (
         <AdminPanel
-          sessions={sessions}
+          sessions={state.sessions}
           onUpdateSession={updateSession}
           onCreateSession={createSession}
-          notificationLog={notificationLog}
+          notificationLog={state.notifications}
           onSimulateReminder={simulateReminder}
           onExit={exitToLanding}
         />
@@ -134,7 +100,7 @@ export default function App() {
 
       {topScreen === 'sharedlink' && (
         <div className="phone-wrapper">
-          <SharedLinkFlow session={sessions.find(s => s.status === 'live') || sessions[0]} onExit={exitToLanding} />
+          <SharedLinkFlow session={state.sessions.find(s => s.status === 'live') || state.sessions[0]} onExit={exitToLanding} />
         </div>
       )}
     </div>

@@ -1,4 +1,3 @@
-import { PROGRAM_DISCOUNT_CAP } from '../../data/webinarData'
 import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor } from './shared'
 
 const LockIcon = ({ color = T3, size = 12 }) => (
@@ -63,7 +62,7 @@ export function WebinarCard({ session, isRegistered, isPaidUser, onOpen }) {
 
 const UPCOMING_STATUS_PRIORITY = { live: 0, scheduled: 1, cancelled: 2 }
 
-export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, openWebinar, onExit }) {
+export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, openWebinar, onExit }) {
   const upcoming = sessions.filter(s => s.status === 'scheduled' || s.status === 'live' || s.status === 'cancelled')
     .sort((a, b) => {
       // Live-now and soon-to-happen sessions must outrank a cancelled session even if that
@@ -100,19 +99,19 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
       </div>
 
       <div style={{ flexShrink: 0, padding: '10px 16px', borderBottom: `1px solid ${BD}` }}>
-        {webinarDiscountPct >= PROGRAM_DISCOUNT_CAP ? (
+        {webinarDiscountPct >= programCap ? (
           <div style={{ width: '100%', background: `linear-gradient(135deg, ${PD}, ${P})`, border: 'none', borderRadius: 12, padding: '12px 14px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 700 }}>You've unlocked {PROGRAM_DISCOUNT_CAP}% off — view paid plans</span>
+            <span style={{ fontSize: 12, fontWeight: 700 }}>You've unlocked {programCap}% off — view paid plans</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
           </div>
         ) : (
           <div style={{ background: PL, border: `1px solid ${PB}`, borderRadius: 12, padding: '11px 14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: PD }}>Webinar discount earned</span>
-              <span style={{ fontSize: 15, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 11, fontWeight: 500, opacity: 0.7 }}> / {PROGRAM_DISCOUNT_CAP}%</span></span>
+              <span style={{ fontSize: 15, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 11, fontWeight: 500, opacity: 0.7 }}> / {programCap}%</span></span>
             </div>
             <div style={{ height: 6, background: 'white', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ height: 6, width: `${(webinarDiscountPct / PROGRAM_DISCOUNT_CAP) * 100}%`, background: P, borderRadius: 3, transition: 'width 0.3s' }} />
+              <div style={{ height: 6, width: `${(webinarDiscountPct / programCap) * 100}%`, background: P, borderRadius: 3, transition: 'width 0.3s' }} />
             </div>
           </div>
         )}

@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react'
-import { blankSession } from '../../data/webinarData'
+import { useEffect, useState } from 'react'
 
 const P = '#534AB7', PL = '#EEEDFE', PB = '#AFA9EC', PD = '#3C3489'
 const G = '#3B6D11', GL = '#EAF3DE', GB = '#97C459'
@@ -29,27 +28,24 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
   const [selectedId, setSelectedId] = useState(sessions[0]?.id ?? null)
   const [showLog, setShowLog] = useState(false)
   const selected = sessions.find(s => s.id === selectedId) || null
-  const valueAtFocusRef = useRef('')
 
-  const handleField = (field, value) => {
-    onUpdateSession(selectedId, { [field]: value })
-  }
+  // Local draft so typing doesn't fire a network request per keystroke — each field is
+  // PATCHed to the backend on blur. The backend itself detects real vs no-op changes
+  // (comparing against the stored row) before firing any reschedule/cancel notification,
+  // so blurring an untouched field is always safe here.
+  const [draft, setDraft] = useState(selected)
+  useEffect(() => { setDraft(selected) }, [selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Only treat Date/Time edits as a reschedule when the value actually changed —
-  // merely focusing and blurring a field (no edits) must not fire a false notification.
-  const handleDateTimeFocus = (e) => { valueAtFocusRef.current = e.target.value }
-  const handleDateTimeBlur = (e) => {
-    if (e.target.value !== valueAtFocusRef.current) onUpdateSession(selectedId, {}, { dateChanged: true })
-  }
+  const setDraftField = (field, value) => setDraft(d => ({ ...d, [field]: value }))
+  const saveField = (field) => onUpdateSession(selectedId, { [field]: draft[field] })
 
   const handleStatusChange = (newStatus) => {
-    onUpdateSession(selectedId, { status: newStatus }, { statusChanged: true })
+    onUpdateSession(selectedId, { status: newStatus })
   }
 
-  const handleNew = () => {
-    const id = Math.max(0, ...sessions.map(s => s.id)) + 1
-    onCreateSession(blankSession(id))
-    setSelectedId(id)
+  const handleNew = async () => {
+    const created = await onCreateSession()
+    if (created?.id) setSelectedId(created.id)
   }
 
   const exportCSV = (session) => {
@@ -122,7 +118,7 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
 
           {/* Editor */}
           <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
-            {!selected ? (
+            {!selected || !draft ? (
               <div style={{ fontSize: 13, color: T3 }}>Select a session, or create a new one.</div>
             ) : (
               <>
@@ -140,35 +136,35 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
                   <Field label="Host name">
-                    <input style={inputStyle} value={selected.host} onChange={e => handleField('host', e.target.value)} placeholder="e.g. Aman Singhal" />
+                    <input style={inputStyle} value={draft.host} onChange={e => setDraftField('host', e.target.value)} onBlur={() => saveField('host')} placeholder="e.g. Aman Singhal" />
                   </Field>
                   <Field label="Topic">
-                    <input style={inputStyle} value={selected.topic} onChange={e => handleField('topic', e.target.value)} placeholder="Session topic" />
+                    <input style={inputStyle} value={draft.topic} onChange={e => setDraftField('topic', e.target.value)} onBlur={() => saveField('topic')} placeholder="Session topic" />
                   </Field>
                   <Field label="Topper name (optional)">
-                    <input style={inputStyle} value={selected.topperName} onChange={e => handleField('topperName', e.target.value)} placeholder="e.g. Rohit Meena" />
+                    <input style={inputStyle} value={draft.topperName} onChange={e => setDraftField('topperName', e.target.value)} onBlur={() => saveField('topperName')} placeholder="e.g. Rohit Meena" />
                   </Field>
                   <Field label="NORCET rank (optional)">
-                    <input style={inputStyle} value={selected.topperRank} onChange={e => handleField('topperRank', e.target.value)} placeholder="e.g. AIR 15, NORCET 9" />
+                    <input style={inputStyle} value={draft.topperRank} onChange={e => setDraftField('topperRank', e.target.value)} onBlur={() => saveField('topperRank')} placeholder="e.g. AIR 15, NORCET 9" />
                   </Field>
                   <Field label="Date">
-                    <input style={inputStyle} value={selected.dateLabel} onChange={e => handleField('dateLabel', e.target.value)} placeholder="e.g. Sat, 18 Jul" onFocus={handleDateTimeFocus} onBlur={handleDateTimeBlur} />
+                    <input style={inputStyle} value={draft.dateLabel} onChange={e => setDraftField('dateLabel', e.target.value)} onBlur={() => saveField('dateLabel')} placeholder="e.g. Sat, 18 Jul" />
                   </Field>
                   <Field label="Time">
-                    <input style={inputStyle} value={selected.timeLabel} onChange={e => handleField('timeLabel', e.target.value)} placeholder="e.g. 7:00 PM – 8:00 PM" onFocus={handleDateTimeFocus} onBlur={handleDateTimeBlur} />
+                    <input style={inputStyle} value={draft.timeLabel} onChange={e => setDraftField('timeLabel', e.target.value)} onBlur={() => saveField('timeLabel')} placeholder="e.g. 7:00 PM – 8:00 PM" />
                   </Field>
                   <Field label="YouTube embed link/ID">
-                    <input style={inputStyle} value={selected.youtubeEmbedId} onChange={e => handleField('youtubeEmbedId', e.target.value)} placeholder="YouTube video ID" />
+                    <input style={inputStyle} value={draft.youtubeEmbedId} onChange={e => setDraftField('youtubeEmbedId', e.target.value)} onBlur={() => saveField('youtubeEmbedId')} placeholder="YouTube video ID" />
                   </Field>
                   <Field label="Study material (file or link)">
-                    <input style={inputStyle} value={selected.studyMaterialUrl} onChange={e => handleField('studyMaterialUrl', e.target.value)} placeholder="Leave blank until ready — shows a placeholder, not an error" />
+                    <input style={inputStyle} value={draft.studyMaterialUrl} onChange={e => setDraftField('studyMaterialUrl', e.target.value)} onBlur={() => saveField('studyMaterialUrl')} placeholder="Leave blank until ready — shows a placeholder, not an error" />
                   </Field>
                   <Field label="Recording (uploaded after session ends)">
-                    <input style={inputStyle} value={selected.recordingUrl} onChange={e => handleField('recordingUrl', e.target.value)} placeholder="/recordings/session.mp4" />
+                    <input style={inputStyle} value={draft.recordingUrl} onChange={e => setDraftField('recordingUrl', e.target.value)} onBlur={() => saveField('recordingUrl')} placeholder="/recordings/session.mp4" />
                   </Field>
                   {selected.status === 'cancelled' && (
                     <Field label="Cancellation reason">
-                      <input style={inputStyle} value={selected.cancelledReason || ''} onChange={e => handleField('cancelledReason', e.target.value)} placeholder="Shown to students on the card" />
+                      <input style={inputStyle} value={draft.cancelledReason || ''} onChange={e => setDraftField('cancelledReason', e.target.value)} onBlur={() => saveField('cancelledReason')} placeholder="Shown to students on the card" />
                     </Field>
                   )}
                 </div>
@@ -178,6 +174,7 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                     // Reminders are suppressed once a session is cancelled/completed (PRD req #5: "cancelled
                     // before T-24, reminders are suppressed automatically"). The broadcast is a post-session
                     // re-engagement push, so it only makes sense once the session has actually completed.
+                    // The backend enforces this too — these disabled states just avoid a round-trip to find out.
                     const remindersEnabled = selected.status === 'scheduled'
                     const broadcastEnabled = selected.status === 'completed'
                     const btnStyle = (enabled) => ({ padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: enabled ? T2 : T3, fontSize: 11, fontWeight: 600, cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.5 })

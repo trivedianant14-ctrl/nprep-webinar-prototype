@@ -7,7 +7,7 @@ import WebinarPostSession from './WebinarPostSession'
 const DEPTH = { webinar: 0, detail: 1, live: 2, post: 1 }
 
 export default function StudentApp({
-  sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct,
+  sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap,
   webinarActions, webinarMidSessionIds,
   onRegister, onJoinLive, onCompleteStudyMaterial, onEndSession, onCompleteQuiz, onSubmitFollowUp,
   onExit,
@@ -51,6 +51,7 @@ export default function StudentApp({
             isPaidUser={isPaidUser}
             toggleIsPaidUser={toggleIsPaidUser}
             webinarDiscountPct={webinarDiscountPct}
+            programCap={programCap}
             openWebinar={openWebinar}
             onExit={onExit}
           />

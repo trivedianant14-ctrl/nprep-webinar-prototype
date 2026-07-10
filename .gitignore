@@ -3,5 +3,6 @@ dist
 .DS_Store
 *.local
 .vercel
-
-.vercel
+.env*
+.agents
+skills-lock.json
