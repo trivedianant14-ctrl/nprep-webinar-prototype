@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { blankSession } from '../../data/webinarData'
 
 const P = '#534AB7', PL = '#EEEDFE', PB = '#AFA9EC', PD = '#3C3489'
@@ -29,9 +29,17 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
   const [selectedId, setSelectedId] = useState(sessions[0]?.id ?? null)
   const [showLog, setShowLog] = useState(false)
   const selected = sessions.find(s => s.id === selectedId) || null
+  const valueAtFocusRef = useRef('')
 
   const handleField = (field, value) => {
     onUpdateSession(selectedId, { [field]: value })
+  }
+
+  // Only treat Date/Time edits as a reschedule when the value actually changed —
+  // merely focusing and blurring a field (no edits) must not fire a false notification.
+  const handleDateTimeFocus = (e) => { valueAtFocusRef.current = e.target.value }
+  const handleDateTimeBlur = (e) => {
+    if (e.target.value !== valueAtFocusRef.current) onUpdateSession(selectedId, {}, { dateChanged: true })
   }
 
   const handleStatusChange = (newStatus) => {
@@ -144,10 +152,10 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                     <input style={inputStyle} value={selected.topperRank} onChange={e => handleField('topperRank', e.target.value)} placeholder="e.g. AIR 15, NORCET 9" />
                   </Field>
                   <Field label="Date">
-                    <input style={inputStyle} value={selected.dateLabel} onChange={e => handleField('dateLabel', e.target.value)} placeholder="e.g. Sat, 18 Jul" onBlur={() => onUpdateSession(selectedId, {}, { dateChanged: true })} />
+                    <input style={inputStyle} value={selected.dateLabel} onChange={e => handleField('dateLabel', e.target.value)} placeholder="e.g. Sat, 18 Jul" onFocus={handleDateTimeFocus} onBlur={handleDateTimeBlur} />
                   </Field>
                   <Field label="Time">
-                    <input style={inputStyle} value={selected.timeLabel} onChange={e => handleField('timeLabel', e.target.value)} placeholder="e.g. 7:00 PM – 8:00 PM" onBlur={() => onUpdateSession(selectedId, {}, { dateChanged: true })} />
+                    <input style={inputStyle} value={selected.timeLabel} onChange={e => handleField('timeLabel', e.target.value)} placeholder="e.g. 7:00 PM – 8:00 PM" onFocus={handleDateTimeFocus} onBlur={handleDateTimeBlur} />
                   </Field>
                   <Field label="YouTube embed link/ID">
                     <input style={inputStyle} value={selected.youtubeEmbedId} onChange={e => handleField('youtubeEmbedId', e.target.value)} placeholder="YouTube video ID" />
@@ -165,10 +173,25 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginTop: 6, marginBottom: 24, flexWrap: 'wrap' }}>
-                  <button onClick={() => onSimulateReminder(selected, 'T-24h')} style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: T2, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Simulate T-24h reminder</button>
-                  <button onClick={() => onSimulateReminder(selected, 'T-1h')} style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: T2, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Simulate T-1h reminder</button>
-                  <button onClick={() => onSimulateReminder(selected, 'broadcast')} style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: T2, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Simulate "you missed it" broadcast (P1)</button>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                  {(() => {
+                    // Reminders are suppressed once a session is cancelled/completed (PRD req #5: "cancelled
+                    // before T-24, reminders are suppressed automatically"). The broadcast is a post-session
+                    // re-engagement push, so it only makes sense once the session has actually completed.
+                    const remindersEnabled = selected.status === 'scheduled'
+                    const broadcastEnabled = selected.status === 'completed'
+                    const btnStyle = (enabled) => ({ padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: enabled ? T2 : T3, fontSize: 11, fontWeight: 600, cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.5 })
+                    return (
+                      <>
+                        <button onClick={() => onSimulateReminder(selected, 'T-24h')} disabled={!remindersEnabled} style={btnStyle(remindersEnabled)}>Simulate T-24h reminder</button>
+                        <button onClick={() => onSimulateReminder(selected, 'T-1h')} disabled={!remindersEnabled} style={btnStyle(remindersEnabled)}>Simulate T-1h reminder</button>
+                        <button onClick={() => onSimulateReminder(selected, 'broadcast')} disabled={!broadcastEnabled} style={btnStyle(broadcastEnabled)}>Simulate "you missed it" broadcast (P1)</button>
+                      </>
+                    )
+                  })()}
+                </div>
+                <div style={{ fontSize: 10, color: T3, marginBottom: 16 }}>
+                  Reminders are only available while a session is Scheduled; the broadcast only applies once it's Completed.
                 </div>
 
                 <div style={{ borderTop: `1px solid ${BD}`, paddingTop: 16 }}>

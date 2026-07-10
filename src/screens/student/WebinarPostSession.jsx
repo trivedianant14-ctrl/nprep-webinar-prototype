@@ -102,7 +102,12 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
         )}
 
         <Section title={isRegistered ? '3. Recording' : 'Recording'} done={false} noCheckbox>
-          {canSeeRecording ? (
+          {!session.recordingUrl ? (
+            // Marketing hasn't uploaded the recording yet — same placeholder-not-error treatment as study material.
+            <div style={{ background: '#f5f5fb', border: `1px dashed ${BD}`, borderRadius: 12, padding: '18px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: T3, fontStyle: 'italic' }}>Recording hasn't been uploaded yet — check back soon.</div>
+            </div>
+          ) : canSeeRecording ? (
             <div style={{ borderRadius: 12, overflow: 'hidden', background: '#1a1a2e', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}><polygon points="5,3 19,12 5,21"/></svg>

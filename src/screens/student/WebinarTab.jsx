@@ -61,9 +61,16 @@ export function WebinarCard({ session, isRegistered, isPaidUser, onOpen }) {
   )
 }
 
+const UPCOMING_STATUS_PRIORITY = { live: 0, scheduled: 1, cancelled: 2 }
+
 export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, openWebinar, onExit }) {
   const upcoming = sessions.filter(s => s.status === 'scheduled' || s.status === 'live' || s.status === 'cancelled')
-    .sort((a, b) => a.daysOut - b.daysOut)
+    .sort((a, b) => {
+      // Live-now and soon-to-happen sessions must outrank a cancelled session even if that
+      // cancelled session's original date has already passed (negative daysOut would otherwise sort it first).
+      const pa = UPCOMING_STATUS_PRIORITY[a.status], pb = UPCOMING_STATUS_PRIORITY[b.status]
+      return pa !== pb ? pa - pb : a.daysOut - b.daysOut
+    })
   const past = sessions.filter(s => s.status === 'completed')
     .sort((a, b) => b.daysOut - a.daysOut) // most recent (closest to 0) first
 

@@ -74,6 +74,9 @@ export default function App() {
 
   const endWebinarLive = (session, { watchedEnough, viaYoutubeDirect }) => {
     if (watchedEnough && !viaYoutubeDirect) setWebinarAction(session.id, 'liveAttendance')
+    // Without this, the session stays status:'live' forever — the Webinar tab would keep
+    // showing "LIVE NOW / Join Now" for a session the student just finished.
+    updateSession(session.id, { status: 'completed' })
     logNotification('reminder', 'Post-session push fired', `Registered students for "${session.topic}" were pushed back to the post-session screen.`)
   }
 
