@@ -87,6 +87,22 @@ input, textarea { font-family: inherit; }
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+/* Gamified reward track + quiz-level overlay */
+@keyframes nodePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(29,91,240,0.45); }
+  50%       { box-shadow: 0 0 0 6px rgba(29,91,240,0); }
+}
+@keyframes popIn {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
+  60%  { transform: scale(1.35) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
 /* Non-phone flows (CMS admin panel) use a wider desktop-style container */
 .wide-panel {
   width: 100%;

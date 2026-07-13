@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { P, PL, PB, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, BG2, BackHeader, fmtWhen, countdown, liveViewers, Thumb } from './shared'
+import { P, PL, PB, PD, G, GL, GB, R, RL, RB, A, AL, AB, T1, T2, T3, BD, BG2, BackHeader, fmtWhen, countdown, liveViewers, Thumb } from './shared'
 
 function ShareSheet({ session, onClose }) {
   return (
@@ -35,6 +35,13 @@ function ShareSheet({ session, onClose }) {
   )
 }
 
+const PERKS = [
+  { icon: '🎤', label: 'Live Q&A', sub: 'Ask the topper directly' },
+  { icon: '📄', label: 'Study material', sub: 'Free with registration' },
+  { icon: '🎬', label: 'Full recording', sub: 'For paid members' },
+  { icon: '🏷️', label: 'Up to 15% off', sub: '+5% per action' },
+]
+
 export default function WebinarDetail({ session, isRegistered, isMidSessionRegistrant, studyMaterialDone, onBack, onRegister, onJoinLive, onCompleteStudyMaterial }) {
   const [justConfirmed, setJustConfirmed] = useState(false)
   const [showShare, setShowShare] = useState(false)
@@ -53,7 +60,10 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
     setJustConfirmed(true)
   }
 
-  const studyMaterialSkipped = isMidSessionRegistrant && session.status === 'live'
+  const isLive = session.status === 'live'
+  const isUpcoming = session.status === 'scheduled'
+  const studyMaterialSkipped = isMidSessionRegistrant && isLive
+  const showMaterial = isUpcoming && (isRegistered || justConfirmed)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
@@ -63,7 +73,7 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
         {/* Thumbnail header — the session's visual identity carries into the detail view */}
         <Thumb session={session}>
           <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
-            {session.status === 'live' ? (
+            {isLive ? (
               <>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FF3B5C', color: 'white', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 6 }}>
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', animation: 'livePulse 1.4s ease-in-out infinite' }} />
@@ -71,7 +81,7 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
                 </span>
                 <span style={{ background: 'rgba(6,12,35,0.65)', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 6 }}>👁 {liveViewers(session)} watching</span>
               </>
-            ) : session.status === 'scheduled' ? (
+            ) : isUpcoming ? (
               <span style={{ background: 'rgba(6,12,35,0.7)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6 }}>⏳ Starts in {countdown(session.startAt) || 'moments'}</span>
             ) : null}
           </div>
@@ -80,29 +90,81 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
           </div>
         </Thumb>
 
-        <div style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 11, color: T3, fontWeight: 500 }}>{fmtWhen(session.startAt, session.endAt)}</span>
+        <div style={{ padding: '14px 16px 18px' }}>
+          {/* When + share */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: PL, color: PD, fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={PD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {fmtWhen(session.startAt, session.endAt)}
+            </span>
             {isRegistered && session.status !== 'cancelled' && (
-              <button onClick={() => setShowShare(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: P, fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, flexShrink: 0 }}>
+              <button onClick={() => setShowShare(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: P, fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0, flexShrink: 0 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={P} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
                 Share
               </button>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+
+          {/* Educator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '11px 13px', marginBottom: 10 }}>
             <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${P}, #6B96F8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-              {session.host[0]}
+              {(session.topperName || session.host)[0]}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T1 }}>Hosted by {session.host}</div>
-              {session.topperName && (
-                <div style={{ fontSize: 11, color: T2, marginTop: 2 }}>
-                  with <span style={{ fontWeight: 700, color: PD }}>{session.topperName}</span> · {session.topperRank}
-                </div>
+              {session.topperName ? (
+                <>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: T1 }}>{session.topperName} <span style={{ fontSize: 10, fontWeight: 700, color: PD, background: PL, padding: '1px 7px', borderRadius: 10, marginLeft: 2 }}>{session.topperRank}</span></div>
+                  <div style={{ fontSize: 10.5, color: T2, marginTop: 2 }}>Hosted by {session.host} · NPrep Faculty</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: T1 }}>{session.host}</div>
+                  <div style={{ fontSize: 10.5, color: T2, marginTop: 2 }}>NPrep Faculty</div>
+                </>
               )}
             </div>
           </div>
+
+          {/* What you get */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+            {PERKS.map(p => (
+              <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'white', border: `1px solid ${BD}`, borderRadius: 12, padding: '9px 11px' }}>
+                <span style={{ fontSize: 17 }}>{p.icon}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T1 }}>{p.label}</div>
+                  <div style={{ fontSize: 9, color: T3 }}>{p.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Study material — clean status card, only once registered */}
+          {showMaterial && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'white', border: `1px solid ${studyMaterialDone ? GB : BD}`, borderRadius: 12, padding: '11px 13px', marginBottom: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: studyMaterialDone ? GL : PL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
+                {studyMaterialDone ? '✅' : '📄'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T1 }}>Pre-session Study Material</div>
+                <div style={{ fontSize: 10, color: studyMaterialDone ? G : T2, fontWeight: studyMaterialDone ? 700 : 400, marginTop: 2 }}>
+                  {session.studyMaterialUrl
+                    ? (studyMaterialDone ? '+5% off earned — nice!' : 'Ready to read · earns +5% off')
+                    : 'Uploading soon — we’ll notify you'}
+                </div>
+              </div>
+              {session.studyMaterialUrl ? (
+                !studyMaterialDone && <button className="btn-sm-primary" style={{ flexShrink: 0 }} onClick={() => onCompleteStudyMaterial(session.id)}>Open</button>
+              ) : (
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: A, background: AL, border: `1px solid ${AB}`, padding: '3px 9px', borderRadius: 20, flexShrink: 0 }}>Soon</span>
+              )}
+            </div>
+          )}
+
+          {studyMaterialSkipped && (
+            <div style={{ fontSize: 10.5, color: T3, background: BG2, borderRadius: 10, padding: '8px 12px' }}>
+              Registering mid-session — study material is skipped for this one.
+            </div>
+          )}
 
           {session.status === 'cancelled' && (
             <div style={{ background: RL, border: `1px solid ${RB}`, borderRadius: 12, padding: '14px' }}>
@@ -110,59 +172,32 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
               <div style={{ fontSize: 12, color: R, opacity: 0.85 }}>{session.cancelledReason}</div>
             </div>
           )}
-
-          {session.status === 'live' && (
-            <>
-              <button onClick={() => onJoinLive(session)} style={{ width: '100%', padding: '13px', borderRadius: 12, background: '#FF6B6B', color: 'white', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', marginBottom: 12 }}>
-                Join Now →
-              </button>
-              {studyMaterialSkipped && (
-                <div style={{ fontSize: 11, color: T3, textAlign: 'center' }}>Registering mid-session — study material is skipped for this one.</div>
-              )}
-            </>
-          )}
-
-          {session.status === 'scheduled' && (
-            <>
-              {!isRegistered ? (
-                <button onClick={handleRegister} style={{ width: '100%', padding: '13px', borderRadius: 12, background: P, color: 'white', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', marginBottom: 14 }}>
-                  Register for Free
-                </button>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px', borderRadius: 12, background: GL, border: `1px solid ${GB}`, color: G, fontSize: 14, fontWeight: 700, marginBottom: 14 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  Registered
-                </div>
-              )}
-
-              {(isRegistered || justConfirmed) && (
-                <div style={{ background: 'white', border: `1px solid ${BD}`, borderRadius: 12, padding: '14px', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={P} strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: T1 }}>Pre-session Study Material</span>
-                  </div>
-                  {session.studyMaterialUrl ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      {studyMaterialDone ? (
-                        <span style={{ fontSize: 12, fontWeight: 600, color: G }}>✓ Completed — +5% discount earned</span>
-                      ) : (
-                        <span style={{ fontSize: 12, color: T2 }}>Unlocked — complete it before the session for +5% discount.</span>
-                      )}
-                      {!studyMaterialDone && (
-                        <button className="btn-sm-primary" style={{ flexShrink: 0 }} onClick={() => onCompleteStudyMaterial(session.id)}>Open</button>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 12, color: T3, fontStyle: 'italic' }}>Study material hasn't been uploaded yet — check back closer to the session.</div>
-                  )}
-                </div>
-              )}
-
-              <div style={{ fontSize: 11, color: T3, textAlign: 'center' }}>You'll get reminders 24 hours and 1 hour before the session starts.</div>
-            </>
-          )}
         </div>
       </div>
+
+      {/* Pinned CTA — no dead whitespace below the fold, action always in thumb's reach */}
+      {(isLive || isUpcoming) && (
+        <div style={{ flexShrink: 0, background: 'white', borderTop: `1px solid ${BD}`, padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+          {isLive ? (
+            <button onClick={() => onJoinLive(session)} style={{ width: '100%', padding: '13px', borderRadius: 26, background: '#FF3B5C', color: 'white', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,59,92,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+              Join Now
+            </button>
+          ) : !isRegistered ? (
+            <>
+              <button onClick={handleRegister} style={{ width: '100%', padding: '13px', borderRadius: 26, background: P, color: 'white', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(29,91,240,0.35)' }}>
+                Register for Free
+              </button>
+              <div style={{ fontSize: 10, color: T3, textAlign: 'center', marginTop: 7 }}>Reminders on push + WhatsApp, 24h and 1h before we go live</div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', borderRadius: 26, background: GL, border: `1px solid ${GB}`, color: G, fontSize: 13.5, fontWeight: 800 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Registered — see you there!
+            </div>
+          )}
+        </div>
+      )}
 
       {showShare && <ShareSheet session={session} onClose={() => setShowShare(false)} />}
     </div>

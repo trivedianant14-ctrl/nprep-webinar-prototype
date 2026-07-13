@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor, fmtWhen, countdown, liveViewers, Thumb } from './shared'
+import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor, fmtWhen, countdown, liveViewers, Thumb, LevelTrack } from './shared'
 
 const LockIcon = ({ color = 'white', size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -155,24 +155,27 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
         </button>
       </div>
 
-      <div style={{ flexShrink: 0, padding: '10px 16px', borderBottom: `1px solid ${BD}` }}>
-        {webinarDiscountPct >= programCap ? (
-          <div style={{ width: '100%', background: `linear-gradient(135deg, ${PD}, ${P})`, border: 'none', borderRadius: 12, padding: '12px 14px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 700 }}>You've unlocked {programCap}% off — view paid plans</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
-          </div>
-        ) : (
-          <div style={{ background: PL, border: `1px solid ${PB}`, borderRadius: 12, padding: '11px 14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: PD }}>Webinar discount earned</span>
-              <span style={{ fontSize: 15, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 11, fontWeight: 500, opacity: 0.7 }}> / {programCap}%</span></span>
+      {/* Reward track — freemium only. Paid members already converted, so no upgrade
+          mechanic is shown to them (the PRD's discount is a freemium→paid lever). */}
+      {!isPaidUser && (
+        <div style={{ flexShrink: 0, padding: '10px 16px', borderBottom: `1px solid ${BD}` }}>
+          {webinarDiscountPct >= programCap ? (
+            <div style={{ width: '100%', background: `linear-gradient(135deg, ${PD}, ${P})`, border: 'none', borderRadius: 14, padding: '12px 14px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>🎁 {programCap}% off unlocked — view paid plans</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </div>
-            <div style={{ height: 6, background: 'white', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ height: 6, width: `${(webinarDiscountPct / programCap) * 100}%`, background: P, borderRadius: 3, transition: 'width 0.3s' }} />
+          ) : (
+            <div style={{ background: `linear-gradient(180deg, ${PL} 0%, #F7FAFF 100%)`, border: `1px solid ${PB}`, borderRadius: 14, padding: '11px 13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>🎁 Webinar Rewards</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.65 }}> / {programCap}% off</span></span>
+              </div>
+              <LevelTrack pct={webinarDiscountPct} cap={programCap} />
+              <div style={{ fontSize: 9.5, color: T2, marginTop: 8 }}>+5% each — finish the study material, attend live & clear the quiz</div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 24px' }}>
         {live.length > 0 && (

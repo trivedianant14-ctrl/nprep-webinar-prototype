@@ -41,6 +41,40 @@ export function liveViewers(session) {
   return ((session.id * 397) % 900 + 420).toLocaleString()
 }
 
+// Candy-crush-style reward track: one node per 5% milestone. Earned nodes fill with a
+// star, the next one pulses, the 40% cap is the prize node.
+export function LevelTrack({ pct, cap = 40, step = 5 }) {
+  const nodes = []
+  for (let v = step; v <= cap; v += step) nodes.push(v)
+  const nextVal = nodes.find(v => v > pct)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      {nodes.map((v, i) => {
+        const earned = pct >= v
+        const isNext = v === nextVal
+        const isPrize = v === cap
+        return (
+          <div key={v} style={{ display: 'flex', alignItems: 'center', flex: i === 0 ? '0 0 auto' : 1 }}>
+            {i > 0 && <div style={{ flex: 1, height: 3, borderRadius: 2, margin: '0 3px', background: earned ? P : BD }} />}
+            <div style={{
+              width: isPrize ? 34 : 28, height: isPrize ? 34 : 28, borderRadius: '50%', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: earned ? 13 : isPrize ? 14 : 8.5, fontWeight: 800,
+              background: earned ? `linear-gradient(135deg, ${P}, #3B79FF)` : isNext ? 'white' : BG2,
+              color: earned ? 'white' : isNext ? P : T3,
+              border: earned ? 'none' : `2px solid ${isNext ? P : BD}`,
+              animation: isNext ? 'nodePulse 1.6s ease-in-out infinite' : 'none',
+              boxShadow: earned ? '0 2px 6px rgba(29,91,240,0.35)' : 'none',
+            }}>
+              {earned ? '★' : isPrize ? '🎁' : `${v}`}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // Thumbnail-first card media: image with gradient fallback, children are overlays.
 export function Thumb({ session, aspect = '16/9', radius = 0, children }) {
   return (
