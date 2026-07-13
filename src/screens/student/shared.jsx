@@ -13,6 +13,48 @@ export function ctaFor(session, isRegistered) {
   return { label: 'Register', tone: 'scheduled' }
 }
 
+// "Today · 4:00 PM – 5:00 PM" / "Tue, 15 Jul · 6:30 PM – 7:30 PM"
+export function fmtWhen(startAt, endAt) {
+  const s = new Date(startAt), e = new Date(endAt), now = new Date()
+  const sameDay = (a, b) => a.toDateString() === b.toDateString()
+  const day = sameDay(s, now) ? 'Today'
+    : sameDay(s, new Date(now.getTime() + 864e5)) ? 'Tomorrow'
+    : s.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
+  const t = d => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  return `${day} · ${t(s)} – ${t(e)}`
+}
+
+// "2d 3h" / "3h 12m" / "42m" until start; null once started
+export function countdown(startAt) {
+  let ms = new Date(startAt) - Date.now()
+  if (ms <= 0) return null
+  const d = Math.floor(ms / 864e5); ms -= d * 864e5
+  const h = Math.floor(ms / 36e5); ms -= h * 36e5
+  const m = Math.max(1, Math.floor(ms / 6e4))
+  if (d > 0) return `${d}d ${h}h`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
+// Stable pseudo viewer count for live sessions (Unacademy-style "watching" social proof)
+export function liveViewers(session) {
+  return ((session.id * 397) % 900 + 420).toLocaleString()
+}
+
+// Thumbnail-first card media: image with gradient fallback, children are overlays.
+export function Thumb({ session, aspect = '16/9', radius = 0, children }) {
+  return (
+    <div style={{ position: 'relative', width: '100%', aspectRatio: aspect, borderRadius: radius, overflow: 'hidden', background: 'linear-gradient(135deg, #12339B 0%, #1D5BF0 60%, #3B79FF 100%)', flexShrink: 0 }}>
+      {session.thumbnailUrl && (
+        <img src={session.thumbnailUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+      )}
+      {/* darkening scrim so overlaid text stays readable on any image */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(6,12,35,0.25) 0%, rgba(6,12,35,0.05) 40%, rgba(6,12,35,0.72) 100%)' }} />
+      {children}
+    </div>
+  )
+}
+
 export function StatusBar() {
   return (
     <div style={{ padding: '12px 20px 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>

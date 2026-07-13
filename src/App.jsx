@@ -48,6 +48,13 @@ export default function App() {
     }
   }, [refresh])
 
+  // Poll every 30s: session status is schedule-driven server-side (Scheduled → Live →
+  // Completed off the clock), so an open app sees a session go live without any tap.
+  useEffect(() => {
+    const t = setInterval(refresh, 30000)
+    return () => clearInterval(t)
+  }, [refresh])
+
   // Every mutation hits the backend, then re-hydrates from /api/state — simplest correct
   // approach at this scale, and it means the CMS and student flows are always reading the
   // same server-computed truth (discount %, notification log, registration state).
@@ -113,7 +120,7 @@ export default function App() {
 
       {topScreen === 'sharedlink' && (
         <div className="phone-wrapper">
-          <SharedLinkFlow session={state.sessions.find(s => s.status === 'live') || state.sessions[0]} onExit={exitToLanding} />
+          <SharedLinkFlow session={state.sessions.find(s => s.status === 'live') || state.sessions.find(s => s.status !== 'cancelled')} onExit={exitToLanding} />
         </div>
       )}
     </div>

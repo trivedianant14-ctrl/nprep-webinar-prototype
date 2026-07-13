@@ -1,5 +1,8 @@
 // One-time setup: creates tables and seeds initial demo data.
 // Run with: node --env-file=.env.local scripts/setup-db.mjs
+// Times are seeded RELATIVE TO NOW so the schedule-driven status logic demos well:
+// one session is live right now, the next starts in ~2 days, and statuses flip
+// automatically as the clock passes each boundary.
 import { neon } from '@neondatabase/serverless'
 
 const sql = neon(process.env.DATABASE_URL)
@@ -12,14 +15,17 @@ CREATE TABLE IF NOT EXISTS sessions (
   topper_name TEXT NOT NULL DEFAULT '',
   topper_rank TEXT NOT NULL DEFAULT '',
   topic TEXT NOT NULL DEFAULT '',
-  date_label TEXT NOT NULL DEFAULT '',
-  time_label TEXT NOT NULL DEFAULT '',
-  days_out INTEGER NOT NULL DEFAULT 30,
+  start_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  end_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  thumbnail_url TEXT NOT NULL DEFAULT '',
   youtube_embed_id TEXT NOT NULL DEFAULT '',
   study_material_url TEXT NOT NULL DEFAULT '',
   recording_url TEXT NOT NULL DEFAULT '',
   cancelled_reason TEXT NOT NULL DEFAULT ''
 );
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS start_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS end_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS thumbnail_url TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS registrations (
   id SERIAL PRIMARY KEY,
@@ -59,28 +65,17 @@ CREATE TABLE IF NOT EXISTS followups (
 );
 `
 
+const now = Date.now()
+const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR
+const at = (offsetMs) => new Date(now + offsetMs).toISOString()
+
 const SESSIONS = [
   {
-    status: 'scheduled', host: 'Aman Singhal', topperName: '', topperRank: '',
-    topic: 'Cracking NORCET in 90 Days — A Study Plan That Works',
-    dateLabel: 'Sat, 18 Jul', timeLabel: '7:00 PM – 8:00 PM', daysOut: 8,
-    youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '', recordingUrl: '',
-    registrants: [],
-  },
-  {
-    status: 'scheduled', host: 'Priya Sharma', topperName: 'Rohit Meena', topperRank: 'AIR 15, NORCET 9',
-    topic: 'From Tier-3 City to AIR 15 — My NORCET Journey',
-    dateLabel: 'Tue, 21 Jul', timeLabel: '6:30 PM – 7:30 PM', daysOut: 11,
-    youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '/study-material/norcet-journey-notes.pdf', recordingUrl: '',
-    registrants: [
-      { name: 'Kavya R.', phone: '98xxxxx210' },
-      { name: 'Suresh M.', phone: '87xxxxx004' },
-    ],
-  },
-  {
-    status: 'live', host: 'Aman Singhal', topperName: 'Sanya Kapoor', topperRank: 'AIR 42, NORCET 9',
+    // LIVE right now — started 20 minutes ago, ends in 40
+    status: 'scheduled', host: 'Aman Singhal', topperName: 'Sanya Kapoor', topperRank: 'AIR 42, NORCET 9',
     topic: 'MCQ Discussion — Community Health Nursing High-Yield Topics',
-    dateLabel: 'Today', timeLabel: '4:00 PM – 5:00 PM', daysOut: 0,
+    startAt: at(-20 * MIN), endAt: at(40 * MIN),
+    thumbnailUrl: 'https://picsum.photos/seed/nprep-chn/640/360',
     youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '/study-material/chn-high-yield.pdf', recordingUrl: '',
     registrants: [
       { name: 'Priya S.', phone: '99xxxxx881' },
@@ -89,9 +84,32 @@ const SESSIONS = [
     ],
   },
   {
-    status: 'completed', host: 'Priya Sharma', topperName: 'Karan Deshmukh', topperRank: 'AIR 8, NORCET 8',
+    // Next up — in ~2 days
+    status: 'scheduled', host: 'Priya Sharma', topperName: 'Rohit Meena', topperRank: 'AIR 15, NORCET 9',
+    topic: 'From Tier-3 City to AIR 15 — My NORCET Journey',
+    startAt: at(2 * DAY + 3 * HOUR), endAt: at(2 * DAY + 4 * HOUR),
+    thumbnailUrl: 'https://picsum.photos/seed/nprep-journey/640/360',
+    youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '/study-material/norcet-journey-notes.pdf', recordingUrl: '',
+    registrants: [
+      { name: 'Kavya R.', phone: '98xxxxx210' },
+      { name: 'Suresh M.', phone: '87xxxxx004' },
+    ],
+  },
+  {
+    // Far out — revealed in the app only after the one above is registered
+    status: 'scheduled', host: 'Aman Singhal', topperName: '',  topperRank: '',
+    topic: 'Cracking NORCET in 90 Days — A Study Plan That Works',
+    startAt: at(36 * DAY), endAt: at(36 * DAY + 1 * HOUR),
+    thumbnailUrl: 'https://picsum.photos/seed/nprep-plan/640/360',
+    youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '', recordingUrl: '',
+    registrants: [],
+  },
+  {
+    // Completed last week — recording up
+    status: 'scheduled', host: 'Priya Sharma', topperName: 'Karan Deshmukh', topperRank: 'AIR 8, NORCET 8',
     topic: 'Time Table Secrets of a Topper — Balancing Job + Prep',
-    dateLabel: '3 Jul 2026', timeLabel: '7:00 PM – 8:00 PM', daysOut: -7,
+    startAt: at(-7 * DAY), endAt: at(-7 * DAY + 1 * HOUR),
+    thumbnailUrl: 'https://picsum.photos/seed/nprep-timetable/640/360',
     youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '/study-material/time-table-secrets.pdf', recordingUrl: '/recordings/topper-time-table.mp4',
     registrants: [
       { name: 'Deepak V.', phone: '70xxxxx339' },
@@ -99,16 +117,21 @@ const SESSIONS = [
     ],
   },
   {
-    status: 'completed', host: 'Aman Singhal', topperName: 'Ritika Nair', topperRank: 'AIR 23, NORCET 7',
+    // Completed three weeks ago — recording up
+    status: 'scheduled', host: 'Aman Singhal', topperName: 'Ritika Nair', topperRank: 'AIR 23, NORCET 7',
     topic: 'Last 15 Days Revision Strategy Before the Exam',
-    dateLabel: '20 Jun 2026', timeLabel: '6:00 PM – 7:00 PM', daysOut: -20,
+    startAt: at(-20 * DAY), endAt: at(-20 * DAY + 1 * HOUR),
+    thumbnailUrl: 'https://picsum.photos/seed/nprep-revision/640/360',
     youtubeEmbedId: 'dQw4w9WgXcQ', studyMaterialUrl: '/study-material/last-15-days.pdf', recordingUrl: '/recordings/last-15-days-revision.mp4',
     registrants: [{ name: 'Meera J.', phone: '82xxxxx773' }],
   },
   {
+    // Cancelled — never shown to students; exists so the CMS can demo the
+    // cancellation → push + WhatsApp flow and the restore action.
     status: 'cancelled', host: 'Priya Sharma', topperName: 'Vikram Rathi', topperRank: 'AIR 55, NORCET 9',
     topic: 'Interview Prep for Government Nursing Postings',
-    dateLabel: 'Fri, 10 Jul', timeLabel: '7:00 PM – 8:00 PM', daysOut: -1,
+    startAt: at(3 * DAY), endAt: at(3 * DAY + 1 * HOUR),
+    thumbnailUrl: 'https://picsum.photos/seed/nprep-interview/640/360',
     youtubeEmbedId: '', studyMaterialUrl: '', recordingUrl: '',
     cancelledReason: 'Topper unavailable due to a scheduling conflict',
     registrants: [{ name: 'Farhan A.', phone: '93xxxxx208' }],
@@ -127,8 +150,8 @@ async function main() {
   console.log('Seeding sessions...')
   for (const s of SESSIONS) {
     const [row] = await sql`
-      INSERT INTO sessions (status, host, topper_name, topper_rank, topic, date_label, time_label, days_out, youtube_embed_id, study_material_url, recording_url, cancelled_reason)
-      VALUES (${s.status}, ${s.host}, ${s.topperName}, ${s.topperRank}, ${s.topic}, ${s.dateLabel}, ${s.timeLabel}, ${s.daysOut}, ${s.youtubeEmbedId}, ${s.studyMaterialUrl}, ${s.recordingUrl}, ${s.cancelledReason || ''})
+      INSERT INTO sessions (status, host, topper_name, topper_rank, topic, start_at, end_at, thumbnail_url, youtube_embed_id, study_material_url, recording_url, cancelled_reason)
+      VALUES (${s.status}, ${s.host}, ${s.topperName}, ${s.topperRank}, ${s.topic}, ${s.startAt}, ${s.endAt}, ${s.thumbnailUrl}, ${s.youtubeEmbedId}, ${s.studyMaterialUrl}, ${s.recordingUrl}, ${s.cancelledReason || ''})
       RETURNING id
     `
     let i = 0

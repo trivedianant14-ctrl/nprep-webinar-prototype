@@ -1,77 +1,134 @@
-import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor } from './shared'
+import { useEffect, useState } from 'react'
+import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor, fmtWhen, countdown, liveViewers, Thumb } from './shared'
 
-const LockIcon = ({ color = T3, size = 12 }) => (
+const LockIcon = ({ color = 'white', size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
   </svg>
 )
-const PlayIcon = ({ color = 'white', size = 11 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><polygon points="5,3 19,12 5,21"/></svg>
-)
 
-export function WebinarCard({ session, isRegistered, isPaidUser, onOpen }) {
-  const cta = ctaFor(session, isRegistered)
-  const isLocked = session.status === 'completed' && !isPaidUser
-
-  const ctaStyle = {
-    cancelled:  { bg: BG2, color: T3, border: BD },
-    completed:  isLocked ? { bg: '#FFF8E7', color: '#8D6E63', border: '#FFE082' } : { bg: GL, color: G, border: GB },
-    live:       { bg: '#FF6B6B', color: 'white', border: '#FF6B6B' },
-    registered: { bg: GL, color: G, border: GB },
-    scheduled:  { bg: PL, color: PD, border: PB },
-  }[cta.tone]
-
+function EducatorRow({ session }) {
   return (
-    <button
-      onClick={() => onOpen(session)}
-      disabled={session.status === 'cancelled'}
-      style={{ width: '100%', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, background: 'white', border: `1.5px solid ${session.status === 'live' ? '#FF6B6B' : BD}`, borderRadius: 14, padding: '13px 14px', marginBottom: 10, cursor: session.status === 'cancelled' ? 'default' : 'pointer', opacity: session.status === 'cancelled' ? 0.7 : 1 }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: T3, fontWeight: 500 }}>{session.dateLabel} · {session.timeLabel}</span>
-        {session.status === 'live' && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#FF6B6B' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF6B6B', boxShadow: '0 0 0 2px rgba(255,107,107,0.4)', animation: 'livePulse 1.4s ease-in-out infinite' }} />
-            LIVE NOW
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 26, height: 26, borderRadius: '50%', background: `linear-gradient(135deg, ${PD}, #6B96F8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+        {(session.topperName || session.host)[0]}
+      </div>
+      <span style={{ fontSize: 11, color: T2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {session.topperName
+          ? <><b style={{ color: T1 }}>{session.topperName}</b> · {session.topperRank} · with {session.host}</>
+          : <><b style={{ color: T1 }}>{session.host}</b> · NPrep Faculty</>}
+      </span>
+    </div>
+  )
+}
+
+// Live hero — thumbnail with LIVE pill + viewer count, title on the scrim, red CTA
+function LiveCard({ session, onOpen }) {
+  return (
+    <button onClick={() => onOpen(session)} style={{ width: '100%', textAlign: 'left', background: 'white', border: 'none', borderRadius: 16, overflow: 'hidden', marginBottom: 12, cursor: 'pointer', boxShadow: '0 4px 18px rgba(14,30,66,0.14)', padding: 0 }}>
+      <Thumb session={session}>
+        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FF3B5C', color: 'white', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 6, letterSpacing: '0.04em' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', animation: 'livePulse 1.4s ease-in-out infinite' }} />
+            LIVE
           </span>
-        )}
-      </div>
-
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: T1, lineHeight: 1.4, marginBottom: 4 }}>{session.topic}</div>
-        <div style={{ fontSize: 11, color: T2 }}>
-          Hosted by {session.host}
-          {session.topperName && <> · with <span style={{ fontWeight: 600, color: PD }}>{session.topperName}</span> ({session.topperRank})</>}
+          <span style={{ background: 'rgba(6,12,35,0.65)', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 6 }}>
+            👁 {liveViewers(session)} watching
+          </span>
         </div>
-      </div>
-
-      {session.status === 'cancelled' && session.cancelledReason && (
-        <div style={{ fontSize: 11, color: '#791F1F', background: '#FCEBEB', border: '1px solid #F09595', borderRadius: 8, padding: '6px 10px' }}>{session.cancelledReason}</div>
-      )}
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, background: ctaStyle.bg, color: ctaStyle.color, border: `1px solid ${ctaStyle.border}` }}>
-          {cta.tone === 'live' && <PlayIcon />}
-          {isLocked && <LockIcon color={ctaStyle.color} />}
-          {isLocked ? 'Locked · Upgrade' : cta.label}
+        <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10 }}>
+          <div style={{ color: 'white', fontSize: 14.5, fontWeight: 800, lineHeight: 1.35, textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>{session.topic}</div>
+        </div>
+      </Thumb>
+      <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ flex: 1, minWidth: 0 }}><EducatorRow session={session} /></div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF3B5C', color: 'white', fontSize: 12, fontWeight: 800, padding: '8px 16px', borderRadius: 20, flexShrink: 0, boxShadow: '0 3px 10px rgba(255,59,92,0.35)' }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+          Join Now
         </span>
       </div>
     </button>
   )
 }
 
-const UPCOMING_STATUS_PRIORITY = { live: 0, scheduled: 1, cancelled: 2 }
+// Upcoming — countdown chip on the thumbnail, Register / Registered CTA
+function UpcomingCard({ session, isRegistered, onOpen, tick }) {
+  const cd = countdown(session.startAt)
+  return (
+    <button onClick={() => onOpen(session)} style={{ width: '100%', textAlign: 'left', background: 'white', border: `1px solid ${BD}`, borderRadius: 16, overflow: 'hidden', marginBottom: 12, cursor: 'pointer', padding: 0 }}>
+      <Thumb session={session}>
+        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+          <span style={{ background: 'rgba(6,12,35,0.7)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6 }}>
+            ⏳ Starts in {cd || 'moments'}
+          </span>
+        </div>
+        <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10 }}>
+          <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 10, fontWeight: 600, marginBottom: 3 }}>{fmtWhen(session.startAt, session.endAt)}</div>
+          <div style={{ color: 'white', fontSize: 14.5, fontWeight: 800, lineHeight: 1.35, textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>{session.topic}</div>
+        </div>
+      </Thumb>
+      <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ flex: 1, minWidth: 0 }}><EducatorRow session={session} /></div>
+        {isRegistered ? (
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: G, background: GL, border: `1px solid ${GB}`, padding: '7px 14px', borderRadius: 20, flexShrink: 0 }}>Registered ✓</span>
+        ) : (
+          <span style={{ fontSize: 12, fontWeight: 800, color: 'white', background: P, padding: '8px 18px', borderRadius: 20, flexShrink: 0, boxShadow: '0 3px 10px rgba(29,91,240,0.35)' }}>Register</span>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// Past recording — play overlay + duration chip; lock scrim for freemium
+function PastCard({ session, isPaidUser, onOpen }) {
+  const mins = Math.round((new Date(session.endAt) - new Date(session.startAt)) / 6e4)
+  const locked = !isPaidUser
+  return (
+    <button onClick={() => onOpen(session)} style={{ width: '100%', textAlign: 'left', background: 'white', border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 10, cursor: 'pointer', padding: 0, display: 'flex' }}>
+      <div style={{ width: 132, flexShrink: 0 }}>
+        <Thumb session={session} aspect="16/10">
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: locked ? 'rgba(6,12,35,0.75)' : 'rgba(255,255,255,0.22)', border: '1.5px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {locked ? <LockIcon size={13} /> : <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}><polygon points="5,3 19,12 5,21"/></svg>}
+            </div>
+          </div>
+          <span style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(6,12,35,0.75)', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>{mins}m</span>
+        </Thumb>
+      </div>
+      <div style={{ flex: 1, minWidth: 0, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'center' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: T1, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{session.topic}</div>
+        <div style={{ fontSize: 10, color: T3 }}>
+          {(session.topperName || session.host)} · {new Date(session.startAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}
+        </div>
+        <span style={{ fontSize: 10, fontWeight: 700, color: locked ? '#B96A00' : G }}>
+          {locked ? '🔒 Recording · Upgrade to watch' : '▶ Watch recording'}
+        </span>
+      </div>
+    </button>
+  )
+}
 
 export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, openWebinar, onExit }) {
-  const upcoming = sessions.filter(s => s.status === 'scheduled' || s.status === 'live' || s.status === 'cancelled')
-    .sort((a, b) => {
-      // Live-now and soon-to-happen sessions must outrank a cancelled session even if that
-      // cancelled session's original date has already passed (negative daysOut would otherwise sort it first).
-      const pa = UPCOMING_STATUS_PRIORITY[a.status], pb = UPCOMING_STATUS_PRIORITY[b.status]
-      return pa !== pb ? pa - pb : a.daysOut - b.daysOut
-    })
+  // Re-render every 30s so countdown chips stay honest between server polls.
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 30000)
+    return () => clearInterval(t)
+  }, [])
+
+  const live = sessions.filter(s => s.status === 'live')
+  // One upcoming at a time (live-class platform pattern): show the next session only;
+  // each registration reveals the one after it. Cancelled sessions never appear —
+  // students hear about those via push + WhatsApp instead.
+  const scheduled = sessions.filter(s => s.status === 'scheduled')
+    .sort((a, b) => new Date(a.startAt) - new Date(b.startAt))
+  const visibleUpcoming = []
+  for (const s of scheduled) {
+    visibleUpcoming.push(s)
+    if (!registeredWebinarIds.has(s.id)) break
+  }
   const past = sessions.filter(s => s.status === 'completed')
-    .sort((a, b) => b.daysOut - a.daysOut) // most recent (closest to 0) first
+    .sort((a, b) => new Date(b.endAt) - new Date(a.endAt))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -92,7 +149,7 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
       </div>
 
       <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${BD}`, flexShrink: 0 }}>
-        <span style={{ fontSize: 17, fontWeight: 700, color: T1 }}>Webinars</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: T1 }}>Webinars</span>
         <button style={{ background: 'none', border: 'none', color: T2, display: 'flex' }}>
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
         </button>
@@ -118,17 +175,31 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
       </div>
 
       <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 24px' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T2, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Upcoming</div>
-        {upcoming.length === 0 && <div style={{ fontSize: 12, color: T3, marginBottom: 20 }}>No upcoming sessions scheduled.</div>}
-        {upcoming.map(s => (
-          <WebinarCard key={s.id} session={s} isRegistered={registeredWebinarIds.has(s.id)} isPaidUser={isPaidUser} onOpen={openWebinar} />
-        ))}
+        {live.length > 0 && (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T2, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Happening Now</div>
+            {live.map(s => <LiveCard key={s.id} session={s} onOpen={openWebinar} />)}
+          </>
+        )}
 
-        <div style={{ fontSize: 12, fontWeight: 600, color: T2, margin: '18px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Past</div>
-        {past.length === 0 && <div style={{ fontSize: 12, color: T3 }}>No past sessions yet.</div>}
-        {past.map(s => (
-          <WebinarCard key={s.id} session={s} isRegistered={registeredWebinarIds.has(s.id)} isPaidUser={isPaidUser} onOpen={openWebinar} />
-        ))}
+        {visibleUpcoming.length > 0 && (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T2, margin: `${live.length ? 8 : 0}px 0 10px`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Up Next</div>
+            {visibleUpcoming.map(s => (
+              <UpcomingCard key={s.id} session={s} isRegistered={registeredWebinarIds.has(s.id)} onOpen={openWebinar} tick={tick} />
+            ))}
+          </>
+        )}
+        {live.length === 0 && visibleUpcoming.length === 0 && (
+          <div style={{ fontSize: 12, color: T3, marginBottom: 20 }}>No upcoming sessions — we'll notify you when the next one is scheduled.</div>
+        )}
+
+        {past.length > 0 && (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T2, margin: '18px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Past Sessions & Recordings</div>
+            {past.map(s => <PastCard key={s.id} session={s} isPaidUser={isPaidUser} onOpen={openWebinar} />)}
+          </>
+        )}
       </div>
     </div>
   )

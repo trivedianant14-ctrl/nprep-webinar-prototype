@@ -10,9 +10,14 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    // New sessions default to a 1-hour slot a week out at 7 PM — marketing adjusts from there.
+    const start = new Date()
+    start.setDate(start.getDate() + 7)
+    start.setHours(19, 0, 0, 0)
+    const end = new Date(start.getTime() + 60 * 60 * 1000)
     const [row] = await db`
-      INSERT INTO sessions (status, host, topper_name, topper_rank, topic, date_label, time_label, days_out)
-      VALUES ('scheduled', '', '', '', '', '', '', 30)
+      INSERT INTO sessions (status, host, topper_name, topper_rank, topic, start_at, end_at)
+      VALUES ('scheduled', '', '', '', '', ${start.toISOString()}, ${end.toISOString()})
       RETURNING *
     `
     return res.status(201).json(serializeSession(row))

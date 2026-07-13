@@ -1,11 +1,12 @@
 import { sql } from '../_lib/db.js'
 import { serializeSession } from '../_lib/serialize.js'
+import { computeStatus } from '../_lib/status.js'
 
 const FIELD_MAP = {
   host: 'host', topperName: 'topper_name', topperRank: 'topper_rank', topic: 'topic',
-  dateLabel: 'date_label', timeLabel: 'time_label', youtubeEmbedId: 'youtube_embed_id',
-  studyMaterialUrl: 'study_material_url', recordingUrl: 'recording_url',
-  cancelledReason: 'cancelled_reason', status: 'status',
+  startAt: 'start_at', endAt: 'end_at', thumbnailUrl: 'thumbnail_url',
+  youtubeEmbedId: 'youtube_embed_id', studyMaterialUrl: 'study_material_url',
+  recordingUrl: 'recording_url', cancelledReason: 'cancelled_reason', status: 'status',
 }
 
 export default async function handler(req, res) {
@@ -17,6 +18,12 @@ export default async function handler(req, res) {
     if (!current) return res.status(404).json({ error: 'Session not found' })
 
     const body = req.body || {}
+    // Live/completed are computed from start/end times, never set directly —
+    // marketing may only cancel a session or restore a cancelled one.
+    if ('status' in body && !['cancelled', 'scheduled'].includes(body.status)) {
+      return res.status(400).json({ error: 'Status is schedule-driven; only cancel/restore are manual' })
+    }
+
     const sets = []
     const params = []
     let i = 1
@@ -28,23 +35,29 @@ export default async function handler(req, res) {
       await db.query(`UPDATE sessions SET ${sets.join(', ')} WHERE id = $${i}`, params)
     }
 
-    // Server-authoritative notification triggers — computed off the real before/after
-    // values in the DB, so a no-op edit (focus + blur, no change) never fires a false alert.
-    const becameCancelled = 'status' in body && body.status === 'cancelled' && current.status !== 'cancelled'
-    const rescheduled = !becameCancelled && (
-      ('dateLabel' in body && body.dateLabel !== current.date_label) ||
-      ('timeLabel' in body && body.timeLabel !== current.time_label)
-    )
+    // Server-authoritative notification triggers, computed off the real before/after values.
+    const becameCancelled = body.status === 'cancelled' && current.status !== 'cancelled'
+    const restored = body.status === 'scheduled' && current.status === 'cancelled'
+    const timeChanged = (field) => field in body && new Date(body[field]).getTime() !== new Date(current[field === 'startAt' ? 'start_at' : 'end_at']).getTime()
+    const rescheduled = !becameCancelled && !restored && (timeChanged('startAt') || timeChanged('endAt'))
+    // Only a genuine reschedule of an upcoming session notifies students — nudging the
+    // end time of an already-finished session (or the demo's "end now") shouldn't push.
+    const wasUpcoming = computeStatus(current) === 'scheduled'
 
-    if (becameCancelled || rescheduled) {
+    if (becameCancelled || restored || (rescheduled && wasUpcoming)) {
       const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM registrations WHERE session_id = ${id}`
       const topic = 'topic' in body ? body.topic : current.topic
       const host = 'host' in body ? body.host : current.host
       if (becameCancelled) {
-        await db`INSERT INTO notifications (kind, title, body) VALUES ('cancel', 'Cancellation pushed to registered students', ${`${count} student(s) notified that "${topic}" has been cancelled.`})`
+        await db`INSERT INTO notifications (kind, title, body) VALUES ('cancel', 'Cancellation pushed to registered students', ${`${count} student(s) notified via push + WhatsApp that "${topic}" has been cancelled. The session is no longer visible in the app.`})`
         await db`INSERT INTO notifications (kind, title, body) VALUES ('alert', 'Internal faculty alert', ${`${host} notified: their session "${topic}" was cancelled.`})`
+      } else if (restored) {
+        await db`INSERT INTO notifications (kind, title, body) VALUES ('reminder', 'Session restored', ${`"${topic}" is back on the schedule and visible in the app again.`})`
+      } else if ('startAt' in body && new Date(body.startAt) <= new Date()) {
+        // Pulled forward to now ("Go live now") — that's a go-live announcement, not a reschedule
+        await db`INSERT INTO notifications (kind, title, body) VALUES ('reminder', 'Go-live push sent', ${`${count} registered student(s) notified via push + WhatsApp: "${topic}" is live now — join in!`})`
       } else {
-        await db`INSERT INTO notifications (kind, title, body) VALUES ('cancel', 'Reschedule pushed to registered students', ${`${count} student(s) notified of the new date/time for "${topic}".`})`
+        await db`INSERT INTO notifications (kind, title, body) VALUES ('cancel', 'Reschedule pushed to registered students', ${`${count} student(s) notified via push + WhatsApp of the new date/time for "${topic}".`})`
         await db`INSERT INTO notifications (kind, title, body) VALUES ('alert', 'Internal faculty alert', ${`${host} notified of the reschedule for "${topic}".`})`
       }
     }

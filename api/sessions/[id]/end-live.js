@@ -11,9 +11,8 @@ export default async function handler(req, res) {
   const [session] = await db`SELECT topic FROM sessions WHERE id = ${id}`
   if (!session) return res.status(404).json({ error: 'Session not found' })
 
-  // Without this status flip, the session would stay "LIVE NOW" forever after the
-  // student finishes it — the Webinar tab needs to move it into Past.
-  await db`UPDATE sessions SET status = 'completed' WHERE id = ${id}`
+  // Status is derived from timestamps, so "the session ended" = the end time is now.
+  await db`UPDATE sessions SET end_at = now() WHERE id = ${id}`
 
   if (watchedEnough && !viaYoutubeDirect) {
     await db`

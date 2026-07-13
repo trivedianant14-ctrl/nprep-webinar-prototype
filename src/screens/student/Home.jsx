@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { P, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, StatusBar, ctaFor } from './shared'
+import { P, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, StatusBar, ctaFor, fmtWhen } from './shared'
 
 // Palette from the official app reference: royal-blue hero, orange PRO accents,
 // white surface with pastel section cards, near-black ink for the community CTA.
@@ -25,7 +25,7 @@ export default function Home({ sessions, registeredWebinarIds, onOpenWebinarTab,
   // automatically once it's Completed/Cancelled; CTA mirrors the webinar card state.
   const nextWebinar = sessions
     .filter(s => s.status === 'scheduled' || s.status === 'live')
-    .sort((a, b) => (a.status === 'live' ? -1 : b.status === 'live' ? 1 : a.daysOut - b.daysOut))[0]
+    .sort((a, b) => (a.status === 'live' ? -1 : b.status === 'live' ? 1 : new Date(a.startAt) - new Date(b.startAt)))[0]
   const liveNow = sessions.some(s => s.status === 'live')
   const bannerCta = nextWebinar ? ctaFor(nextWebinar, registeredWebinarIds.has(nextWebinar.id)) : null
 
@@ -81,7 +81,7 @@ export default function Home({ sessions, registeredWebinarIds, onOpenWebinarTab,
                     ? <><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF6B6B', animation: 'livePulse 1.4s ease-in-out infinite' }} />LIVE WEBINAR</>
                     : '🎤 TOPPER WEBINAR'}
                 </span>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)' }}>{nextWebinar.dateLabel} · {nextWebinar.timeLabel}</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)' }}>{fmtWhen(nextWebinar.startAt, nextWebinar.endAt)}</span>
               </div>
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -90,7 +90,11 @@ export default function Home({ sessions, registeredWebinarIds, onOpenWebinarTab,
                     {nextWebinar.host}{nextWebinar.topperName ? ` · with ${nextWebinar.topperName}` : ''}
                   </div>
                 </div>
-                <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>👩‍⚕️</div>
+                {nextWebinar.thumbnailUrl ? (
+                  <img src={nextWebinar.thumbnailUrl} alt="" style={{ width: 86, height: 58, borderRadius: 12, objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.35)', flexShrink: 0 }} onError={e => { e.currentTarget.style.display = 'none' }} />
+                ) : (
+                  <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>👩‍⚕️</div>
+                )}
               </div>
               <button onClick={() => onOpenWebinar(nextWebinar)}
                 style={{ position: 'relative', width: '100%', marginTop: 14, padding: '12px', borderRadius: 26, background: nextWebinar.status === 'live' ? '#FF4D67' : '#3B79FF', border: '1px solid rgba(255,255,255,0.35)', color: 'white', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>

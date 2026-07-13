@@ -1,14 +1,16 @@
+import { computeStatus } from './status.js'
+
 export function serializeSession(row, registrants = []) {
   return {
     id: row.id,
-    status: row.status,
+    status: computeStatus(row),
     host: row.host,
     topperName: row.topper_name,
     topperRank: row.topper_rank,
     topic: row.topic,
-    dateLabel: row.date_label,
-    timeLabel: row.time_label,
-    daysOut: row.days_out,
+    startAt: new Date(row.start_at).toISOString(),
+    endAt: new Date(row.end_at).toISOString(),
+    thumbnailUrl: row.thumbnail_url,
     youtubeEmbedId: row.youtube_embed_id,
     studyMaterialUrl: row.study_material_url,
     recordingUrl: row.recording_url,

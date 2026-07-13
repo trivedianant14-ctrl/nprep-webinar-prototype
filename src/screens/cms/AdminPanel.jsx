@@ -24,24 +24,66 @@ function Field({ label, children }) {
 
 const inputStyle = { width: '100%', padding: '9px 12px', border: `1px solid ${BD}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', color: T1 }
 
+// ISO ↔ datetime-local ("YYYY-MM-DDTHH:mm" in the marketer's local time)
+const toLocal = (iso) => {
+  const d = new Date(iso)
+  const p = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+const fromLocal = (v) => new Date(v).toISOString()
+
+// Live countdown/elapsed copy for the status chip
+function timingCopy(session) {
+  const now = Date.now()
+  const start = new Date(session.startAt).getTime()
+  const end = new Date(session.endAt).getTime()
+  const span = (ms) => {
+    const d = Math.floor(ms / 864e5), h = Math.floor((ms % 864e5) / 36e5), m = Math.max(1, Math.floor((ms % 36e5) / 6e4))
+    return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`
+  }
+  if (session.status === 'cancelled') return 'not visible to students'
+  if (session.status === 'scheduled') return `goes live in ${span(start - now)}`
+  if (session.status === 'live') return `ends in ${span(end - now)}`
+  return `ended ${span(now - end)} ago`
+}
+
+function WhatsAppBubble({ body }) {
+  return (
+    <div style={{ marginTop: 8, maxWidth: 420 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, color: '#128C7E', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="#25D366"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm5.5 14.2c-.2.7-1.4 1.3-1.9 1.3-.5.1-1.1.1-1.8-.1a16 16 0 01-6.7-5.9c-.5-.9-.9-2-.7-2.9.1-.6.7-1.6 1.3-1.7h.9c.3 0 .5.1.7.6l.8 2c.1.2.1.4 0 .6l-.5.8c-.2.2-.2.4-.1.6a8 8 0 003.6 3.2c.2.1.5.1.6-.1l.8-1c.2-.2.4-.3.6-.2l2 1c.4.2.5.4.4.8z"/></svg>
+        WhatsApp preview · sent to registered students
+      </div>
+      <div style={{ background: '#DCF8C6', borderRadius: '2px 10px 10px 10px', padding: '8px 10px', fontSize: 11.5, color: '#1a1a2e', lineHeight: 1.5, boxShadow: '0 1px 1px rgba(0,0,0,0.08)' }}>
+        {body}
+        <div style={{ textAlign: 'right', fontSize: 9, color: '#7a9b76', marginTop: 3 }}>now ✓✓</div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPanel({ sessions, onUpdateSession, onCreateSession, notificationLog, onSimulateReminder, onExit }) {
   const [selectedId, setSelectedId] = useState(sessions[0]?.id ?? null)
   const [showLog, setShowLog] = useState(false)
   const selected = sessions.find(s => s.id === selectedId) || null
 
   // Local draft so typing doesn't fire a network request per keystroke — each field is
-  // PATCHed to the backend on blur. The backend itself detects real vs no-op changes
-  // (comparing against the stored row) before firing any reschedule/cancel notification,
-  // so blurring an untouched field is always safe here.
+  // PATCHed to the backend on blur. The backend detects real vs no-op changes before
+  // firing any reschedule/cancel notification, so blurring an untouched field is safe.
   const [draft, setDraft] = useState(selected)
   useEffect(() => { setDraft(selected) }, [selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Keep the draft's non-focused fields in sync when the poller refreshes sessions
+  useEffect(() => { if (selected && document.activeElement?.tagName !== 'INPUT') setDraft(selected) }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tick every 30s so "goes live in…" countdowns stay current
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 30000)
+    return () => clearInterval(t)
+  }, [])
 
   const setDraftField = (field, value) => setDraft(d => ({ ...d, [field]: value }))
   const saveField = (field) => onUpdateSession(selectedId, { [field]: draft[field] })
-
-  const handleStatusChange = (newStatus) => {
-    onUpdateSession(selectedId, { status: newStatus })
-  }
 
   const handleNew = async () => {
     const created = await onCreateSession()
@@ -60,6 +102,8 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
     URL.revokeObjectURL(url)
   }
 
+  const st = selected ? STATUS_STYLE[selected.status] : null
+
   return (
     <div className="wide-panel" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <div style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: `1px solid ${BD}`, flexShrink: 0 }}>
@@ -69,7 +113,7 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
         </button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: T1 }}>Marketing CMS — Webinar Sessions</div>
-          <div style={{ fontSize: 11, color: T3 }}>Create and manage sessions without engineering involvement</div>
+          <div style={{ fontSize: 11, color: T3 }}>Status is schedule-driven — set the times and the platform handles Scheduled → Live → Completed on its own</div>
         </div>
         <button onClick={() => setShowLog(v => !v)} style={{ position: 'relative', padding: '7px 14px', borderRadius: 8, border: `1px solid ${BD}`, background: showLog ? P : 'white', color: showLog ? 'white' : T2, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
           Notification Log {notificationLog.length > 0 && `(${notificationLog.length})`}
@@ -81,16 +125,17 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
           <div style={{ fontSize: 13, color: T3, marginBottom: 14 }}>
             Every push/WhatsApp/internal alert the system fires automatically — no manual marketing action required (PRD req. #5, #7, #9).
           </div>
-          {notificationLog.length === 0 && <div style={{ fontSize: 12, color: T3 }}>No notifications fired yet. Change a session's status or date, or use the reminder buttons in the session editor.</div>}
+          {notificationLog.length === 0 && <div style={{ fontSize: 12, color: T3 }}>No notifications fired yet. Cancel or reschedule a session, or use the reminder buttons in the session editor.</div>}
           {[...notificationLog].reverse().map((n, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: `1px solid ${BD}` }}>
+            <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: `1px solid ${BD}` }}>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: n.kind === 'alert' ? AL : n.kind === 'cancel' ? RL : GL, color: n.kind === 'alert' ? A : n.kind === 'cancel' ? R : G, border: `1px solid ${n.kind === 'alert' ? AB : n.kind === 'cancel' ? RB : GB}`, flexShrink: 0, height: 'fit-content' }}>
                 {n.kind.toUpperCase()}
               </span>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T1 }}>{n.title}</div>
                 <div style={{ fontSize: 11, color: T2, marginTop: 2 }}>{n.body}</div>
                 <div style={{ fontSize: 10, color: T3, marginTop: 3 }}>{n.time}</div>
+                {(n.kind === 'cancel' || (n.kind === 'reminder' && n.body.includes('WhatsApp'))) && <WhatsAppBubble body={n.body} />}
               </div>
             </div>
           ))}
@@ -98,19 +143,24 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
       ) : (
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           {/* Session list */}
-          <div style={{ width: 260, borderRight: `1px solid ${BD}`, overflowY: 'auto', flexShrink: 0 }}>
+          <div style={{ width: 280, borderRight: `1px solid ${BD}`, overflowY: 'auto', flexShrink: 0 }}>
             <div style={{ padding: 12 }}>
               <button onClick={handleNew} style={{ width: '100%', padding: '9px', borderRadius: 8, background: P, color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                 + New Session
               </button>
             </div>
             {sessions.map(s => {
-              const st = STATUS_STYLE[s.status]
+              const sty = STATUS_STYLE[s.status]
               return (
-                <button key={s.id} onClick={() => setSelectedId(s.id)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', background: selectedId === s.id ? BG2 : 'white', border: 'none', borderBottom: `1px solid ${BD}`, cursor: 'pointer' }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: st.bg, color: st.color, border: `1px solid ${st.border}` }}>{st.label}</span>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: T1, marginTop: 6, lineHeight: 1.3 }}>{s.topic || '(untitled session)'}</div>
-                  <div style={{ fontSize: 10, color: T3, marginTop: 3 }}>{s.dateLabel || 'no date set'}</div>
+                <button key={s.id} onClick={() => setSelectedId(s.id)} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', padding: '11px 12px', background: selectedId === s.id ? BG2 : 'white', border: 'none', borderBottom: `1px solid ${BD}`, cursor: 'pointer', alignItems: 'flex-start' }}>
+                  <div style={{ width: 64, height: 40, borderRadius: 6, overflow: 'hidden', background: 'linear-gradient(135deg,#12339B,#3B79FF)', flexShrink: 0 }}>
+                    {s.thumbnailUrl && <img src={s.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: sty.bg, color: sty.color, border: `1px solid ${sty.border}` }}>{sty.label}</span>
+                    <div style={{ fontSize: 11.5, fontWeight: 600, color: T1, marginTop: 4, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.topic || '(untitled session)'}</div>
+                    <div style={{ fontSize: 9.5, color: T3, marginTop: 2 }}>{new Date(s.startAt).toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</div>
+                  </div>
                 </button>
               )
             })}
@@ -122,16 +172,61 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
               <div style={{ fontSize: 13, color: T3 }}>Select a session, or create a new one.</div>
             ) : (
               <>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                  {Object.entries(STATUS_STYLE).map(([key, st]) => (
-                    <button key={key} onClick={() => handleStatusChange(key)}
-                      style={{ padding: '6px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                        background: selected.status === key ? st.color : 'white',
-                        color: selected.status === key ? 'white' : st.color,
-                        border: `1.5px solid ${st.color}` }}>
+                {/* Schedule & status — the status chip is computed, never set by hand */}
+                <div style={{ background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, padding: '5px 14px', borderRadius: 20, background: st.bg, color: st.color, border: `1.5px solid ${st.border}` }}>
+                      {selected.status === 'live' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF3B5C', animation: 'livePulse 1.4s ease-in-out infinite' }} />}
                       {st.label}
-                    </button>
-                  ))}
+                    </span>
+                    <span style={{ fontSize: 11.5, color: T2 }}>· {timingCopy(selected)}</span>
+                    <span style={{ fontSize: 10, color: T3, marginLeft: 'auto' }}>auto-updates from the times below</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+                    <Field label="Starts at">
+                      <input type="datetime-local" style={inputStyle} value={toLocal(draft.startAt)}
+                        onChange={e => setDraftField('startAt', fromLocal(e.target.value))}
+                        onBlur={() => saveField('startAt')} />
+                    </Field>
+                    <Field label="Ends at">
+                      <input type="datetime-local" style={inputStyle} value={toLocal(draft.endAt)}
+                        onChange={e => setDraftField('endAt', fromLocal(e.target.value))}
+                        onBlur={() => saveField('endAt')} />
+                    </Field>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {selected.status === 'scheduled' && (
+                      <button onClick={() => {
+                        const now = new Date()
+                        onUpdateSession(selectedId, { startAt: now.toISOString(), endAt: new Date(Math.max(new Date(selected.endAt), now.getTime() + 60 * 60 * 1000)).toISOString() })
+                      }} style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#FF3B5C', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        ▶ Go live now
+                      </button>
+                    )}
+                    {selected.status === 'live' && (
+                      <button onClick={() => onUpdateSession(selectedId, { endAt: new Date().toISOString() })}
+                        style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: T1, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        ■ End now
+                      </button>
+                    )}
+                    {selected.status !== 'cancelled' && selected.status !== 'completed' && (
+                      <button onClick={() => onUpdateSession(selectedId, { status: 'cancelled' })}
+                        style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${RB}`, background: RL, color: R, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        Cancel session
+                      </button>
+                    )}
+                    {selected.status === 'cancelled' && (
+                      <button onClick={() => onUpdateSession(selectedId, { status: 'scheduled' })}
+                        style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${GB}`, background: GL, color: G, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        Restore session
+                      </button>
+                    )}
+                  </div>
+                  {selected.status === 'cancelled' && (
+                    <div style={{ fontSize: 10.5, color: R, marginTop: 8 }}>
+                      Hidden from the student app. Registered students were told via push + WhatsApp (see Notification Log).
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
@@ -147,12 +242,6 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                   <Field label="NORCET rank (optional)">
                     <input style={inputStyle} value={draft.topperRank} onChange={e => setDraftField('topperRank', e.target.value)} onBlur={() => saveField('topperRank')} placeholder="e.g. AIR 15, NORCET 9" />
                   </Field>
-                  <Field label="Date">
-                    <input style={inputStyle} value={draft.dateLabel} onChange={e => setDraftField('dateLabel', e.target.value)} onBlur={() => saveField('dateLabel')} placeholder="e.g. Sat, 18 Jul" />
-                  </Field>
-                  <Field label="Time">
-                    <input style={inputStyle} value={draft.timeLabel} onChange={e => setDraftField('timeLabel', e.target.value)} onBlur={() => saveField('timeLabel')} placeholder="e.g. 7:00 PM – 8:00 PM" />
-                  </Field>
                   <Field label="YouTube embed link/ID">
                     <input style={inputStyle} value={draft.youtubeEmbedId} onChange={e => setDraftField('youtubeEmbedId', e.target.value)} onBlur={() => saveField('youtubeEmbedId')} placeholder="YouTube video ID" />
                   </Field>
@@ -164,17 +253,35 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                   </Field>
                   {selected.status === 'cancelled' && (
                     <Field label="Cancellation reason">
-                      <input style={inputStyle} value={draft.cancelledReason || ''} onChange={e => setDraftField('cancelledReason', e.target.value)} onBlur={() => saveField('cancelledReason')} placeholder="Shown to students on the card" />
+                      <input style={inputStyle} value={draft.cancelledReason || ''} onChange={e => setDraftField('cancelledReason', e.target.value)} onBlur={() => saveField('cancelledReason')} placeholder="Included in the push + WhatsApp message" />
                     </Field>
                   )}
                 </div>
 
+                {/* Thumbnail — every session card in the app is thumbnail-first */}
+                <div style={{ background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '14px 16px', marginBottom: 18, display: 'flex', gap: 16 }}>
+                  <div style={{ width: 176, height: 99, borderRadius: 8, overflow: 'hidden', background: 'linear-gradient(135deg,#12339B,#3B79FF)', flexShrink: 0 }}>
+                    {draft.thumbnailUrl && <img src={draft.thumbnailUrl} alt="thumbnail preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Field label="Thumbnail (shown on every webinar card)">
+                      <input style={inputStyle} value={draft.thumbnailUrl} onChange={e => setDraftField('thumbnailUrl', e.target.value)} onBlur={() => saveField('thumbnailUrl')} placeholder="Image URL — or pull it from the YouTube video" />
+                    </Field>
+                    <button
+                      disabled={!draft.youtubeEmbedId}
+                      onClick={() => {
+                        const url = `https://img.youtube.com/vi/${draft.youtubeEmbedId}/hqdefault.jpg`
+                        setDraft(d => ({ ...d, thumbnailUrl: url }))
+                        onUpdateSession(selectedId, { thumbnailUrl: url })
+                      }}
+                      style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${draft.youtubeEmbedId ? PB : BD}`, background: draft.youtubeEmbedId ? PL : 'white', color: draft.youtubeEmbedId ? PD : T3, fontSize: 11, fontWeight: 700, cursor: draft.youtubeEmbedId ? 'pointer' : 'not-allowed' }}>
+                      Use YouTube thumbnail
+                    </button>
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: 8, marginTop: 6, marginBottom: 8, flexWrap: 'wrap' }}>
                   {(() => {
-                    // Reminders are suppressed once a session is cancelled/completed (PRD req #5: "cancelled
-                    // before T-24, reminders are suppressed automatically"). The broadcast is a post-session
-                    // re-engagement push, so it only makes sense once the session has actually completed.
-                    // The backend enforces this too — these disabled states just avoid a round-trip to find out.
                     const remindersEnabled = selected.status === 'scheduled'
                     const broadcastEnabled = selected.status === 'completed'
                     const btnStyle = (enabled) => ({ padding: '7px 12px', borderRadius: 8, border: `1px solid ${BD}`, background: 'white', color: enabled ? T2 : T3, fontSize: 11, fontWeight: 600, cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.5 })

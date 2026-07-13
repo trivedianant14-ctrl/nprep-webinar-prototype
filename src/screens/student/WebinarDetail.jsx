@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { P, PL, PB, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, BG2, BackHeader } from './shared'
+import { P, PL, PB, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, BG2, BackHeader, fmtWhen, countdown, liveViewers, Thumb } from './shared'
 
 function ShareSheet({ session, onClose }) {
   return (
@@ -60,16 +60,29 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
       <BackHeader onBack={onBack} title="Session Details" />
 
       <div className="scroll" style={{ flex: 1, overflowY: 'auto' }}>
-        {session.status === 'live' && (
-          <div style={{ background: '#FF6B6B', color: 'white', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'white', boxShadow: '0 0 0 2px rgba(255,255,255,0.4)', animation: 'livePulse 1.4s ease-in-out infinite' }} />
-            LIVE NOW
+        {/* Thumbnail header — the session's visual identity carries into the detail view */}
+        <Thumb session={session}>
+          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
+            {session.status === 'live' ? (
+              <>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FF3B5C', color: 'white', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 6 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', animation: 'livePulse 1.4s ease-in-out infinite' }} />
+                  LIVE
+                </span>
+                <span style={{ background: 'rgba(6,12,35,0.65)', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 6 }}>👁 {liveViewers(session)} watching</span>
+              </>
+            ) : session.status === 'scheduled' ? (
+              <span style={{ background: 'rgba(6,12,35,0.7)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6 }}>⏳ Starts in {countdown(session.startAt) || 'moments'}</span>
+            ) : null}
           </div>
-        )}
+          <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10 }}>
+            <div style={{ color: 'white', fontSize: 15, fontWeight: 800, lineHeight: 1.35, textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>{session.topic}</div>
+          </div>
+        </Thumb>
 
         <div style={{ padding: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 11, color: T3, fontWeight: 500 }}>{session.dateLabel} · {session.timeLabel}</span>
+            <span style={{ fontSize: 11, color: T3, fontWeight: 500 }}>{fmtWhen(session.startAt, session.endAt)}</span>
             {isRegistered && session.status !== 'cancelled' && (
               <button onClick={() => setShowShare(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: P, fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, flexShrink: 0 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={P} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
@@ -77,8 +90,6 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
               </button>
             )}
           </div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: T1, lineHeight: 1.4, marginBottom: 10 }}>{session.topic}</div>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
             <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${P}, #6B96F8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
               {session.host[0]}

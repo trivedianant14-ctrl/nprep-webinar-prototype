@@ -1,4 +1,5 @@
 import { sql } from '../../_lib/db.js'
+import { computeStatus } from '../../_lib/status.js'
 import { DEMO_STUDENT_KEY } from '../../_lib/constants.js'
 
 export default async function handler(req, res) {
@@ -7,10 +8,10 @@ export default async function handler(req, res) {
   const db = sql()
   const id = Number(req.query.id)
 
-  const [session] = await db`SELECT status FROM sessions WHERE id = ${id}`
+  const [session] = await db`SELECT status, start_at, end_at FROM sessions WHERE id = ${id}`
   if (!session) return res.status(404).json({ error: 'Session not found' })
 
-  const midSession = session.status === 'live'
+  const midSession = computeStatus(session) === 'live'
   // Idempotent: registering twice (or joining live after already being registered) never
   // duplicates a row or clobbers an existing pre-session registration's mid_session flag.
   await db`

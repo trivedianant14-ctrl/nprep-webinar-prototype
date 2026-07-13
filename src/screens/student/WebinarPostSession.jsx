@@ -40,7 +40,7 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
 
       <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: T1, lineHeight: 1.4, marginBottom: 2 }}>{session.topic}</div>
-        <div style={{ fontSize: 11, color: T3, marginBottom: 18 }}>{session.dateLabel} · {session.host}{session.topperName ? ` · ${session.topperName}` : ''}</div>
+        <div style={{ fontSize: 11, color: T3, marginBottom: 18 }}>{new Date(session.startAt).toLocaleDateString([], { day: 'numeric', month: 'short' })} · {session.host}{session.topperName ? ` · ${session.topperName}` : ''}</div>
 
         {justEarned && quizDone && (
           <div style={{ background: GL, border: `1px solid ${GB}`, borderRadius: 10, padding: '9px 12px', fontSize: 12, fontWeight: 600, color: G, marginBottom: 16 }}>
