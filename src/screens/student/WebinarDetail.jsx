@@ -80,7 +80,7 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
           <div style={{ fontSize: 17, fontWeight: 700, color: T1, lineHeight: 1.4, marginBottom: 10 }}>{session.topic}</div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${P}, #8B82E0)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${P}, #6B96F8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
               {session.host[0]}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>

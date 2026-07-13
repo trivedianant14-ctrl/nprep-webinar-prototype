@@ -1,5 +1,5 @@
 // Shared color tokens + small pieces reused across the student-facing webinar screens.
-export const P = '#534AB7', PL = '#EEEDFE', PB = '#AFA9EC', PD = '#3C3489'
+export const P = '#1D5BF0', PL = '#EAF0FE', PB = '#A9C4FA', PD = '#12339B'
 export const G = '#3B6D11', GL = '#EAF3DE', GB = '#97C459'
 export const R = '#791F1F', RL = '#FCEBEB', RB = '#F09595'
 export const A = '#633806', AL = '#FAEEDA', AB = '#FAC775'

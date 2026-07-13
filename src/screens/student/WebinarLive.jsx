@@ -92,7 +92,7 @@ export default function WebinarLive({ session, onBack, onEndSession }) {
         <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }}>
           {MOCK_CHAT.map((c, i) => (
             <div key={i} style={{ marginBottom: 8, fontSize: 12 }}>
-              <span style={{ fontWeight: 700, color: '#3C3489' }}>{c.name}: </span>
+              <span style={{ fontWeight: 700, color: '#12339B' }}>{c.name}: </span>
               <span style={{ color: T2 }}>{c.msg}</span>
             </div>
           ))}

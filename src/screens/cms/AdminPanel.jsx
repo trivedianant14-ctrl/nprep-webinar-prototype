@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const P = '#534AB7', PL = '#EEEDFE', PB = '#AFA9EC', PD = '#3C3489'
+const P = '#1D5BF0', PL = '#EAF0FE', PB = '#A9C4FA', PD = '#12339B'
 const G = '#3B6D11', GL = '#EAF3DE', GB = '#97C459'
 const R = '#791F1F', RL = '#FCEBEB', RB = '#F09595'
 const A = '#633806', AL = '#FAEEDA', AB = '#FAC775'

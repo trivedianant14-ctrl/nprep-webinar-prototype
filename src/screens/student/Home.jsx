@@ -1,44 +1,23 @@
-import { P, PL, PD, G, GL, GB, T1, T2, T3, BD, BG2, ctaFor } from './shared'
+import { useState } from 'react'
+import { P, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, StatusBar, ctaFor } from './shared'
 
-// Official NPrep homepage palette — dark navy header, warm result banner, white card sheet.
-const NAVY = '#0E1E42', NAVY2 = '#1A2F5E'
-const AMBER = '#F5A623'
+// Palette from the official app reference: royal-blue hero, orange PRO accents,
+// white surface with pastel section cards, near-black ink for the community CTA.
+const INK = '#0B1230'
+const ORANGE = '#FF9E1B', ORANGE_D = '#B96A00'
 
-const TILE_STYLES = {
-  webinar: { bg: '#EEEDFE', icon: '#534AB7' },
-  tests:   { bg: '#E8F4FD', icon: '#1A73C9' },
-  qbank:   { bg: '#EAF3DE', icon: '#3B6D11' },
-  videos:  { bg: '#FDEEEE', icon: '#C0392B' },
-  notes:   { bg: '#FFF4E0', icon: '#B9770E' },
-  doubts:  { bg: '#F0EAFB', icon: '#7D3C98' },
-}
+const STORIES = [
+  { label: 'For you', emoji: '🎯', ring: 'linear-gradient(135deg,#FF9E1B,#FF5E7E)' },
+  { label: 'Toppers', emoji: '🏆', ring: 'linear-gradient(135deg,#1D5BF0,#7C3AED)', opensWebinars: true },
+  { label: 'Study Tips', emoji: '💡', ring: 'linear-gradient(135deg,#00B8A9,#1D5BF0)' },
+  { label: 'Jobs', emoji: '💼', ring: 'linear-gradient(135deg,#F5576C,#F093FB)' },
+  { label: 'Courses', emoji: '📚', ring: 'linear-gradient(135deg,#FBBF24,#F59E0B)' },
+]
 
-function WhiteStatusBar() {
-  return (
-    <div style={{ padding: '12px 20px 4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, color: 'white' }}>
-      <span style={{ fontSize: 13, fontWeight: 600 }}>9:30</span>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <svg width="16" height="11" viewBox="0 0 30 20" fill="currentColor"><rect x="0" y="8" width="4" height="12" rx="1" opacity="0.4"/><rect x="7" y="5" width="4" height="15" rx="1" opacity="0.6"/><rect x="14" y="2" width="4" height="18" rx="1" opacity="0.8"/><rect x="21" y="0" width="4" height="20" rx="1"/></svg>
-        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="2" stroke="currentColor"/><rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="currentColor" opacity="0.4"/><rect x="1.5" y="1.5" width="15" height="9" rx="1.5" fill="currentColor"/></svg>
-      </div>
-    </div>
-  )
-}
-
-function FeatureTile({ tone, label, sub, icon, onClick, badge, wide }) {
-  const t = TILE_STYLES[tone]
-  return (
-    <button onClick={onClick} disabled={!onClick} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, background: 'white', border: `1px solid ${BD}`, borderRadius: 14, padding: wide ? '14px' : '12px', textAlign: 'left', cursor: onClick ? 'pointer' : 'default', gridColumn: wide ? 'span 2' : undefined, boxShadow: '0 1px 4px rgba(14,30,66,0.05)' }}>
-      {badge}
-      <div style={{ width: wide ? 38 : 32, height: wide ? 38 : 32, borderRadius: 10, background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.icon, flexShrink: 0 }}>
-        {icon}
-      </div>
-      <div>
-        <div style={{ fontSize: wide ? 13.5 : 12, fontWeight: 700, color: T1, lineHeight: 1.3 }}>{label}</div>
-        {sub && <div style={{ fontSize: 10.5, color: T3, marginTop: 2, lineHeight: 1.4 }}>{sub}</div>}
-      </div>
-    </button>
-  )
+const QOD = {
+  question: 'Which of the following levels of care includes super-specialty hospitals like AIIMS?',
+  options: ['Primary Care', 'Secondary Care', 'Tertiary Care', 'Home Care'],
+  correct: 2,
 }
 
 export default function Home({ sessions, registeredWebinarIds, onOpenWebinarTab, onOpenTests, onOpenWebinar, onExit }) {
@@ -50,140 +29,179 @@ export default function Home({ sessions, registeredWebinarIds, onOpenWebinarTab,
   const liveNow = sessions.some(s => s.status === 'live')
   const bannerCta = nextWebinar ? ctaFor(nextWebinar, registeredWebinarIds.has(nextWebinar.id)) : null
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: NAVY }}>
-      <WhiteStatusBar />
+  const [picked, setPicked] = useState(null)
 
-      {/* Header */}
-      <div style={{ padding: '8px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={onExit} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', flexShrink: 0 }} title="All flows">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'white' }}>
+      <StatusBar />
+
+      {/* Top bar — hamburger (exit), GO PRO, search, coins */}
+      <div style={{ padding: '6px 16px 10px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <button onClick={onExit} title="All flows" style={{ background: 'none', border: 'none', cursor: 'pointer', color: T1, display: 'flex', padding: 2 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="14" y2="18"/></svg>
+        </button>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(90deg,#FFB020,#FF8A00)', color: 'white', fontSize: 11, fontWeight: 800, padding: '5px 13px', borderRadius: 20, letterSpacing: '0.04em', boxShadow: '0 2px 8px rgba(255,138,0,0.35)' }}>
+          ⚡ GO PRO
+        </span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, color: T1 }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FFF4E0', border: '1px solid #FFE0AD', borderRadius: 20, padding: '3px 10px', fontSize: 11.5, fontWeight: 800, color: ORANGE_D }}>🔥 0</span>
+        </div>
+      </div>
+
+      {/* Story circles */}
+      {/* inline flex overrides the .scroll class's flex:1 — the class is only wanted for its hidden scrollbar */}
+      <div style={{ display: 'flex', flex: '0 0 auto', gap: 14, padding: '2px 16px 12px', overflowX: 'auto', overflowY: 'hidden', borderBottom: `1px solid ${BD}` }} className="scroll">
+        {STORIES.map(s => (
+          <button key={s.label} onClick={s.opensWebinars ? onOpenWebinarTab : undefined}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: s.opensWebinars ? 'pointer' : 'default', flexShrink: 0, padding: 0, position: 'relative' }}>
+            <span style={{ width: 56, height: 56, borderRadius: '50%', background: s.ring, padding: 2.5, display: 'flex' }}>
+              <span style={{ flex: 1, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{s.emoji}</span>
+            </span>
+            {s.opensWebinars && liveNow && (
+              <span style={{ position: 'absolute', top: 0, right: 0, fontSize: 7.5, fontWeight: 800, color: 'white', background: '#FF3B5C', borderRadius: 8, padding: '1.5px 5px', border: '1.5px solid white' }}>LIVE</span>
+            )}
+            <span style={{ fontSize: 10, color: T2, fontWeight: 600 }}>{s.label}</span>
           </button>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'white' }}>Hello, Anant 👋</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>NORCET 2026 Aspirant</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 14, color: 'rgba(255,255,255,0.85)' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <div style={{ position: 'relative', display: 'flex' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-            {liveNow && <span style={{ position: 'absolute', top: -1, right: -1, width: 7, height: 7, borderRadius: '50%', background: '#FF6B6B', border: `1.5px solid ${NAVY}` }} />}
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Scrollable body */}
       <div className="scroll" style={{ flex: 1, overflowY: 'auto' }}>
 
-        {/* NORCET result promo banner (official design) */}
-        <div style={{ margin: '2px 16px 12px', borderRadius: 14, overflow: 'hidden', background: `linear-gradient(120deg, ${AMBER} 0%, #F7B84B 55%, #F9CE7F 100%)`, padding: '13px 14px', position: 'relative' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#7A4A00', letterSpacing: '0.08em', marginBottom: 3 }}>NORCET 9.0 RESULT</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#3D2600', lineHeight: 1.3, maxWidth: 200 }}>247 selections from NPrep this year 🎉</div>
-          <div style={{ fontSize: 10.5, color: '#7A4A00', marginTop: 4 }}>Meet the toppers → </div>
-          <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
-            {['R', 'S', 'K'].map((ch, i) => (
-              <div key={ch} style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${PD}, #8B82E0)`, border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14, marginLeft: i ? -10 : 0 }}>{ch}</div>
+        {/* Hero — blue gradient; the webinar takes over this slot when one is scheduled/live (PRD P0 #2) */}
+        <div style={{ margin: '14px 16px 0', borderRadius: 20, overflow: 'hidden', background: 'radial-gradient(120% 160% at 20% 0%, #3B79FF 0%, #1D5BF0 45%, #1233B8 100%)', padding: '18px 16px 16px', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
+          <div style={{ position: 'absolute', bottom: -40, left: -20, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+          {nextWebinar ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.16)', color: 'white', fontSize: 9.5, fontWeight: 800, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.05em' }}>
+                  {nextWebinar.status === 'live'
+                    ? <><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF6B6B', animation: 'livePulse 1.4s ease-in-out infinite' }} />LIVE WEBINAR</>
+                    : '🎤 TOPPER WEBINAR'}
+                </span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)' }}>{nextWebinar.dateLabel} · {nextWebinar.timeLabel}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: 'white', fontSize: 16, fontWeight: 800, lineHeight: 1.35, marginBottom: 4 }}>{nextWebinar.topic}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11 }}>
+                    {nextWebinar.host}{nextWebinar.topperName ? ` · with ${nextWebinar.topperName}` : ''}
+                  </div>
+                </div>
+                <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>👩‍⚕️</div>
+              </div>
+              <button onClick={() => onOpenWebinar(nextWebinar)}
+                style={{ position: 'relative', width: '100%', marginTop: 14, padding: '12px', borderRadius: 26, background: nextWebinar.status === 'live' ? '#FF4D67' : '#3B79FF', border: '1px solid rgba(255,255,255,0.35)', color: 'white', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                {nextWebinar.status === 'live' && <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>}
+                {bannerCta.label}
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', position: 'relative' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: 'white', fontSize: 17, fontWeight: 800, lineHeight: 1.4 }}>Your dream career is waiting. Let's start learning.</div>
+                </div>
+                <div style={{ width: 62, height: 62, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, flexShrink: 0 }}>👩‍⚕️</div>
+              </div>
+              <button onClick={onOpenWebinarTab} style={{ position: 'relative', width: '100%', marginTop: 14, padding: '12px', borderRadius: 26, background: '#3B79FF', border: '1px solid rgba(255,255,255,0.35)', color: 'white', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                Start Learning
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Question of the Day */}
+        <div style={{ padding: '18px 16px 4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 14.5, fontWeight: 800, color: INK }}>Question of the Day</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: ORANGE_D, background: '#FFF4E0', border: '1px solid #FFE0AD', padding: '2px 9px', borderRadius: 20 }}>Question Bank 🔥 +5</span>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: T1, lineHeight: 1.5, marginBottom: 12 }}>{QOD.question}</div>
+          {QOD.options.map((opt, i) => {
+            const isCorrect = picked != null && i === QOD.correct
+            const isWrongPick = picked === i && i !== QOD.correct
+            return (
+              <button key={opt} onClick={() => picked == null && setPicked(i)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', marginBottom: 8, borderRadius: 12, textAlign: 'left', cursor: picked == null ? 'pointer' : 'default',
+                  background: isCorrect ? GL : isWrongPick ? RL : 'white',
+                  border: `1.5px solid ${isCorrect ? GB : isWrongPick ? RB : BD}` }}>
+                <span style={{ width: 28, height: 28, borderRadius: 8, background: isCorrect ? G : isWrongPick ? R : INK, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
+                  {String.fromCharCode(65 + i)}
+                </span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: isCorrect ? G : isWrongPick ? R : T1 }}>{opt}</span>
+                {isCorrect && <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 800, color: G }}>✓ Correct</span>}
+              </button>
+            )
+          })}
+          {picked != null && (
+            <div style={{ fontSize: 11, color: T2, marginTop: 2 }}>
+              {picked === QOD.correct ? 'Nice — +5 coins earned 🔥' : 'Tertiary care covers super-specialty institutes like AIIMS.'}
+            </div>
+          )}
+        </div>
+
+        {/* Limited offer strip (visual parity with the official app) */}
+        <div style={{ margin: '14px 16px 0', borderRadius: 14, background: 'linear-gradient(90deg, #1D5BF0 0%, #4338CA 100%)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 8.5, fontWeight: 800, color: 'white', background: 'rgba(255,255,255,0.18)', padding: '2px 8px', borderRadius: 20, letterSpacing: '0.06em' }}>⏱ LIMITED OFFER</span>
+            <div style={{ color: 'white', fontSize: 13.5, fontWeight: 800, marginTop: 5 }}>7 Day Free Trial</div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>No commitment · Cancel anytime</div>
+          </div>
+          <div style={{ textAlign: 'center', flexShrink: 0 }}>
+            <span style={{ display: 'inline-block', background: ORANGE, color: 'white', fontSize: 12, fontWeight: 800, padding: '8px 18px', borderRadius: 20, boxShadow: '0 3px 10px rgba(255,158,27,0.4)' }}>Try PRO</span>
+            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 9, marginTop: 4 }}>06 : 23 : 01</div>
+          </div>
+        </div>
+
+        {/* Webinars + Tests + QBank pastel tiles */}
+        <div style={{ padding: '18px 16px 4px' }}>
+          <div style={{ fontSize: 14.5, fontWeight: 800, color: INK, marginBottom: 10 }}>Learn & Practice</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            {[
+              { label: 'Webinars', cap: 'Topper-led live sessions', emoji: '🎥', bg: '#E7ECFD', onClick: onOpenWebinarTab, live: liveNow },
+              { label: 'Test Series', cap: 'Mocks & preboards', emoji: '📝', bg: '#FDEEE7', onClick: onOpenTests },
+              { label: 'QBank', cap: 'Lakhs of practice questions', emoji: '📚', bg: '#FBE9F0' },
+            ].map(t => (
+              <button key={t.label} onClick={t.onClick} disabled={!t.onClick}
+                style={{ position: 'relative', background: t.bg, border: 'none', borderRadius: 16, padding: '16px 10px 12px', textAlign: 'center', cursor: t.onClick ? 'pointer' : 'default' }}>
+                {t.live && (
+                  <span style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 8, fontWeight: 800, color: '#FF3B5C' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF3B5C', animation: 'livePulse 1.4s ease-in-out infinite' }} />LIVE
+                  </span>
+                )}
+                <div style={{ fontSize: 30, marginBottom: 8 }}>{t.emoji}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: INK }}>{t.label}</div>
+                <div style={{ fontSize: 9, color: T2, marginTop: 3, lineHeight: 1.4 }}>{t.cap}</div>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Webinar homepage banner — PRD P0 #2 */}
-        {nextWebinar && (
-          <button onClick={() => onOpenWebinar(nextWebinar)} style={{ display: 'block', width: 'calc(100% - 32px)', margin: '0 16px 14px', textAlign: 'left', background: NAVY2, border: '1px solid rgba(255,255,255,0.14)', borderRadius: 14, padding: '13px 14px', cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.12)', color: 'white', fontSize: 9.5, fontWeight: 700, padding: '2px 9px', borderRadius: 20 }}>
-                {nextWebinar.status === 'live' ? (
-                  <><span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF6B6B', animation: 'livePulse 1.4s ease-in-out infinite' }} />LIVE WEBINAR</>
-                ) : '🎤 UPCOMING WEBINAR'}
-              </span>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>{nextWebinar.dateLabel} · {nextWebinar.timeLabel}</span>
-            </div>
-            <div style={{ color: 'white', fontSize: 13, fontWeight: 700, lineHeight: 1.4, marginBottom: 3 }}>{nextWebinar.topic}</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10.5 }}>
-                {nextWebinar.host}{nextWebinar.topperName ? ` · with ${nextWebinar.topperName}` : ''}
-              </span>
-              <span style={{ background: nextWebinar.status === 'live' ? '#FF6B6B' : P, borderRadius: 20, padding: '5px 13px', color: 'white', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{bannerCta.label} →</span>
-            </div>
-          </button>
-        )}
-
-        {/* White sheet with feature tiles */}
-        <div style={{ background: BG2, borderRadius: '20px 20px 0 0', padding: '18px 16px 24px', minHeight: 420 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: T1, marginBottom: 12 }}>Explore</div>
-
-          {/* Webinar + Test Series — the two hero cards, side by side */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <FeatureTile
-              tone="webinar" wide={false}
-              label="Webinars" sub="Topper-led live sessions · earn up to 40% off"
-              onClick={onOpenWebinarTab}
-              badge={liveNow && (
-                <span style={{ position: 'absolute', top: 10, right: 10, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 800, color: '#FF6B6B' }}>
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF6B6B', animation: 'livePulse 1.4s ease-in-out infinite' }} />LIVE
-                </span>
-              )}
-              icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 10l6-4v12l-6-4"/></svg>}
-            />
-            <FeatureTile
-              tone="tests" wide={false}
-              label="Test Series" sub="Mocks, preboards & daily practice tests"
-              onClick={onOpenTests}
-              icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>}
-            />
-          </div>
-
-          {/* Secondary tiles (visual parity with the official app — inert in this prototype) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
-            <FeatureTile tone="qbank" label="QBank" sub="14,000+ MCQs"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>} />
-            <FeatureTile tone="videos" label="Video Classes" sub="Full syllabus coverage"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>} />
-            <FeatureTile tone="notes" label="Study Material" sub="Notes & PDFs"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>} />
-            <FeatureTile tone="doubts" label="Ask Doubts" sub="24h expert answers"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>} />
-          </div>
-
-          {/* Continue watching (official design parity) */}
-          <div style={{ fontSize: 13, fontWeight: 800, color: T1, marginBottom: 10 }}>Continue Watching</div>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-            {[
-              { title: 'CHN — High-Yield Topics Part 3', tutor: 'Aman Singhal', pct: 62 },
-              { title: 'MSN — Cardiac Disorders Revision', tutor: 'Priya Sharma', pct: 35 },
-            ].map(v => (
-              <div key={v.title} style={{ minWidth: 200, background: 'white', border: `1px solid ${BD}`, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
-                <div style={{ height: 84, background: '#1a1a2e', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style={{ marginLeft: 2 }}><polygon points="5,3 19,12 5,21"/></svg>
-                  </div>
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.2)' }}>
-                    <div style={{ height: 3, width: `${v.pct}%`, background: P }} />
-                  </div>
-                </div>
-                <div style={{ padding: '8px 10px' }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: T1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.title}</div>
-                  <div style={{ fontSize: 10, color: T3, marginTop: 2 }}>{v.tutor} · {v.pct}% done</div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Community */}
+        <div style={{ padding: '26px 16px 28px', textAlign: 'center' }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: INK, lineHeight: 1.15 }}>NPrep</div>
+          <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.1, background: 'linear-gradient(90deg, #1D5BF0, #7C3AED)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', letterSpacing: '0.01em' }}>COMMUNITY</div>
+          <div style={{ fontSize: 11.5, color: T2, marginTop: 8 }}>Over <b>5,000+</b> active students each month</div>
+          <button style={{ marginTop: 14, background: INK, color: 'white', fontSize: 13, fontWeight: 700, padding: '12px 42px', borderRadius: 26, border: 'none', cursor: 'pointer' }}>Join Now</button>
         </div>
       </div>
 
-      {/* Bottom nav */}
+      {/* Bottom nav — reference style: blue active tab */}
       <div style={{ flexShrink: 0, background: 'white', borderTop: `1px solid ${BD}`, display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {[
           { id: 'home', label: 'Home', active: true, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg> },
-          { id: 'tests', label: 'Tests', onClick: onOpenTests, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg> },
+          { id: 'qbank', label: 'Qbank', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg> },
           { id: 'webinar', label: 'Webinar', onClick: onOpenWebinarTab, dot: liveNow, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 10l6-4v12l-6-4"/></svg> },
-          { id: 'profile', label: 'Profile', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> },
+          { id: 'tests', label: 'Tests', onClick: onOpenTests, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg> },
+          { id: 'more', label: 'More', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg> },
         ].map(t => (
           <button key={t.id} onClick={t.onClick} style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '8px 0 10px', background: 'none', border: 'none', color: t.active ? P : T3, cursor: t.onClick || t.active ? 'pointer' : 'default' }}>
             {t.icon}
-            {t.dot && <span style={{ position: 'absolute', top: 6, right: '32%', width: 6, height: 6, borderRadius: '50%', background: '#FF6B6B' }} />}
+            {t.dot && <span style={{ position: 'absolute', top: 6, right: '30%', width: 6, height: 6, borderRadius: '50%', background: '#FF3B5C' }} />}
             <span style={{ fontSize: 10, fontWeight: t.active ? 700 : 400 }}>{t.label}</span>
           </button>
         ))}
