@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
+import Home from './Home'
+import Tests from './Tests'
 import WebinarTab from './WebinarTab'
 import WebinarDetail from './WebinarDetail'
 import WebinarLive from './WebinarLive'
 import WebinarPostSession from './WebinarPostSession'
 
-const DEPTH = { webinar: 0, detail: 1, live: 2, post: 1 }
+const DEPTH = { home: 0, tests: 1, webinar: 1, detail: 2, post: 2, live: 3 }
 
 export default function StudentApp({
   sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap,
@@ -12,8 +14,11 @@ export default function StudentApp({
   onRegister, onJoinLive, onCompleteStudyMaterial, onEndSession, onCompleteQuiz, onSubmitFollowUp,
   onExit,
 }) {
-  const [screen, setScreen] = useState('webinar')
+  const [screen, setScreen] = useState('home')
   const [currentId, setCurrentId] = useState(null)
+  // Where the detail/post screens should return to — the webinar tab normally, but the
+  // homepage banner deep-links straight into a session, so back should go home from there.
+  const [webinarReturnTo, setWebinarReturnTo] = useState('webinar')
   const animDirRef = useRef('forward')
 
   const goTo = (next) => {
@@ -25,8 +30,9 @@ export default function StudentApp({
 
   const currentSession = sessions.find(s => s.id === currentId) || null
 
-  const openWebinar = (session) => {
+  const openWebinar = (session, from = 'webinar') => {
     setCurrentId(session.id)
+    setWebinarReturnTo(from)
     goTo(session.status === 'completed' ? 'post' : 'detail')
   }
 
@@ -44,6 +50,17 @@ export default function StudentApp({
   return (
     <div className="phone">
       <div key={screen} className={`screen-trans screen-${animDirRef.current}`}>
+        {screen === 'home' && (
+          <Home
+            sessions={sessions}
+            registeredWebinarIds={registeredWebinarIds}
+            onOpenWebinarTab={() => goTo('webinar')}
+            onOpenTests={() => goTo('tests')}
+            onOpenWebinar={(session) => openWebinar(session, 'home')}
+            onExit={onExit}
+          />
+        )}
+        {screen === 'tests' && <Tests onBack={() => goTo('home')} />}
         {screen === 'webinar' && (
           <WebinarTab
             sessions={sessions}
@@ -52,8 +69,8 @@ export default function StudentApp({
             toggleIsPaidUser={toggleIsPaidUser}
             webinarDiscountPct={webinarDiscountPct}
             programCap={programCap}
-            openWebinar={openWebinar}
-            onExit={onExit}
+            openWebinar={(session) => openWebinar(session, 'webinar')}
+            onExit={() => goTo('home')}
           />
         )}
         {screen === 'detail' && (
@@ -62,7 +79,7 @@ export default function StudentApp({
             isRegistered={currentSession ? registeredWebinarIds.has(currentSession.id) : false}
             isMidSessionRegistrant={currentSession ? webinarMidSessionIds.has(currentSession.id) : false}
             studyMaterialDone={currentSession ? !!webinarActions[currentSession.id]?.studyMaterial : false}
-            onBack={() => goTo('webinar')}
+            onBack={() => goTo(webinarReturnTo)}
             onRegister={onRegister}
             onJoinLive={joinLive}
             onCompleteStudyMaterial={onCompleteStudyMaterial}
@@ -77,7 +94,7 @@ export default function StudentApp({
             isRegistered={currentSession ? registeredWebinarIds.has(currentSession.id) : false}
             isPaidUser={isPaidUser}
             quizDone={currentSession ? !!webinarActions[currentSession.id]?.quiz : false}
-            onBack={() => goTo('webinar')}
+            onBack={() => goTo(webinarReturnTo)}
             onCompleteQuiz={onCompleteQuiz}
             onSubmitFollowUp={onSubmitFollowUp}
           />

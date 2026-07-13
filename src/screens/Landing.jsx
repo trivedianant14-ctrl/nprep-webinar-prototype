@@ -8,7 +8,7 @@ const FLOWS = [
     id: 'student',
     tag: 'Student journey',
     title: 'Student App',
-    desc: 'Webinar tab, homepage banner, registration + study material, embedded live player with chat, post-session quiz & recording, discount meter.',
+    desc: 'Official-style homepage with webinar banner + test series, webinar tab, registration + study material, embedded live player with chat, post-session quiz & recording, discount meter.',
   },
   {
     id: 'cms',

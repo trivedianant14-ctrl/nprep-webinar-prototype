@@ -35,6 +35,19 @@ export default function App() {
 
   useEffect(() => { refresh() }, [refresh])
 
+  // Re-sync whenever the tab comes back to the foreground (or is restored from the
+  // back/forward cache) — otherwise a tab left open for days keeps showing the state
+  // from whenever it was first loaded, even though the DB has moved on.
+  useEffect(() => {
+    const onShow = () => refresh()
+    window.addEventListener('focus', onShow)
+    window.addEventListener('pageshow', onShow)
+    return () => {
+      window.removeEventListener('focus', onShow)
+      window.removeEventListener('pageshow', onShow)
+    }
+  }, [refresh])
+
   // Every mutation hits the backend, then re-hydrates from /api/state — simplest correct
   // approach at this scale, and it means the CMS and student flows are always reading the
   // same server-computed truth (discount %, notification log, registration state).

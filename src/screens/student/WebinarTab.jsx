@@ -80,7 +80,7 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 16px', background: BG2, borderBottom: `1px solid ${BD}` }}>
         <button onClick={onExit} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T2, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
-          All flows
+          Home
         </button>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'inline-flex', background: 'white', border: `1px solid ${BD}`, borderRadius: 20, padding: 3, gap: 2 }}>
