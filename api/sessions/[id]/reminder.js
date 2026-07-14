@@ -5,22 +5,30 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { kind } = req.body || {}
-  if (!['T-24h', 'T-1h', 'broadcast'].includes(kind)) return res.status(400).json({ error: 'Invalid kind' })
+  if (!['T-24h', 'T-1h', 'broadcast', 'cohost'].includes(kind)) return res.status(400).json({ error: 'Invalid kind' })
 
   const db = sql()
   const id = Number(req.query.id)
-  const [session] = await db`SELECT status, start_at, end_at, topic FROM sessions WHERE id = ${id}`
+  const [session] = await db`SELECT status, start_at, end_at, topic, topper_name, host, youtube_embed_id FROM sessions WHERE id = ${id}`
   if (!session) return res.status(404).json({ error: 'Session not found' })
 
   // Server-enforced, mirroring the PRD's reminder-suppression rule — a cancelled/completed
   // session can't have a T-24h/T-1h reminder fired, and the "you missed it" broadcast
   // only makes sense once a session has actually completed.
   const status = computeStatus(session)
-  if ((kind === 'T-24h' || kind === 'T-1h') && status !== 'scheduled') {
-    return res.status(409).json({ error: 'Reminders are only available while a session is Scheduled' })
+  if ((kind === 'T-24h' || kind === 'T-1h' || kind === 'cohost') && status !== 'scheduled') {
+    return res.status(409).json({ error: 'Only available while a session is Scheduled' })
   }
   if (kind === 'broadcast' && status !== 'completed') {
     return res.status(409).json({ error: 'Broadcast only applies once a session is Completed' })
+  }
+
+  // Topper coordination (PRD ops timeline): co-host link goes out at T-24h so the
+  // topper can test their setup in advance.
+  if (kind === 'cohost') {
+    const who = session.topper_name || session.host
+    await db`INSERT INTO notifications (kind, title, body) VALUES ('reminder', 'Co-host link sent to topper', ${`YouTube Live co-host link for "${session.topic}" sent to ${who} via WhatsApp + email. T-15 check-in call reminder scheduled for marketing.`})`
+    return res.status(200).json({ ok: true })
   }
 
   const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM registrations WHERE session_id = ${id}`

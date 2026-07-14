@@ -67,6 +67,8 @@ export default function App() {
   const completeWebinarQuiz = async (sessionId) => { await api(`/sessions/${sessionId}/action`, { method: 'POST', body: { action: 'quiz' } }); await refresh() }
   const submitWebinarFollowUp = async (sessionId, text) => { await api(`/sessions/${sessionId}/followup`, { method: 'POST', body: { text } }); await refresh() }
   const simulateReminder = async (session, kind) => { await api(`/sessions/${session.id}/reminder`, { method: 'POST', body: { kind } }) ; await refresh() }
+  const shareSession = async (sessionId) => { const r = await api(`/sessions/${sessionId}/share`, { method: 'POST' }); await refresh(); return r }
+  const unlockRecording = async (sessionId) => { await api(`/sessions/${sessionId}/unlock`, { method: 'POST' }); await refresh() }
 
   const exitToLanding = () => setTopScreen('landing')
 
@@ -102,6 +104,10 @@ export default function App() {
             onEndSession={endWebinarLive}
             onCompleteQuiz={completeWebinarQuiz}
             onSubmitFollowUp={submitWebinarFollowUp}
+            shareCredits={state.shareCredits}
+            unlockedSessionIds={new Set(state.unlockedSessionIds)}
+            onShare={shareSession}
+            onUnlock={unlockRecording}
             onExit={exitToLanding}
           />
         </div>

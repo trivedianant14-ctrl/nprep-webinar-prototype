@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { P, PL, PB, PD, G, GL, GB, R, RL, RB, A, AL, AB, T1, T2, T3, BD, BG2, BackHeader, fmtWhen, countdown, liveViewers, Thumb } from './shared'
 
-function ShareSheet({ session, onClose }) {
+function ShareSheet({ session, onClose, onShare }) {
+  // null → not shared yet · 'earned' → credit banked · 'repeat' → already shared this session before
+  const [shared, setShared] = useState(null)
+
+  const handleShare = async () => {
+    const r = await onShare(session.id)
+    setShared(r?.creditEarned ? 'earned' : 'repeat')
+  }
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="sheet" onClick={e => e.stopPropagation()}>
@@ -11,7 +19,25 @@ function ShareSheet({ session, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: T3, cursor: 'pointer', lineHeight: 1 }}>×</button>
         </div>
         <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${PB}`, background: PL, cursor: 'pointer', textAlign: 'left' }}>
+          {/* Share-to-unlock: first share of a session banks one recording-unlock credit */}
+          {shared === 'earned' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: GL, border: `1.5px solid ${GB}`, borderRadius: 12, padding: '12px 14px', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+              <span style={{ fontSize: 22 }}>🔓</span>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: G }}>+1 unlock credit earned!</div>
+                <div style={{ fontSize: 10.5, color: G, opacity: 0.85 }}>Use it to open any locked recording — no upgrade needed</div>
+              </div>
+            </div>
+          ) : shared === 'repeat' ? (
+            <div style={{ fontSize: 11, color: T2, background: BG2, borderRadius: 10, padding: '9px 12px' }}>
+              Shared again — credits are earned once per session, but every share still helps your friends find it.
+            </div>
+          ) : (
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#8a5200', background: '#FFF4E0', border: '1px solid #FFE0AD', borderRadius: 10, padding: '8px 12px' }}>
+              🎁 First share of this session earns +1 recording unlock
+            </div>
+          )}
+          <button onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${PB}`, background: PL, cursor: 'pointer', textAlign: 'left' }}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: P, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </div>
@@ -20,7 +46,7 @@ function ShareSheet({ session, onClose }) {
               <div style={{ fontSize: 10, color: T2 }}>nprep.app/webinar/{session.id} — opens in-app, works for install + acquisition tracking</div>
             </div>
           </button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${BD}`, background: 'white', cursor: 'pointer', textAlign: 'left' }}>
+          <button onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${BD}`, background: 'white', cursor: 'pointer', textAlign: 'left' }}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: '#FF0000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><polygon points="9,7 9,17 17,12"/></svg>
             </div>
@@ -42,7 +68,7 @@ const PERKS = [
   { icon: '🏷️', label: 'Up to 15% off', sub: '+5% per action' },
 ]
 
-export default function WebinarDetail({ session, isRegistered, isMidSessionRegistrant, studyMaterialDone, onBack, onRegister, onJoinLive, onCompleteStudyMaterial }) {
+export default function WebinarDetail({ session, isRegistered, isMidSessionRegistrant, studyMaterialDone, isPaidUser, onBack, onRegister, onJoinLive, onCompleteStudyMaterial, onShare }) {
   const [justConfirmed, setJustConfirmed] = useState(false)
   const [showShare, setShowShare] = useState(false)
 
@@ -62,8 +88,9 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
 
   const isLive = session.status === 'live'
   const isUpcoming = session.status === 'scheduled'
+  const proLocked = session.paidOnly && !isPaidUser
   const studyMaterialSkipped = isMidSessionRegistrant && isLive
-  const showMaterial = isUpcoming && (isRegistered || justConfirmed)
+  const showMaterial = isUpcoming && !proLocked && (isRegistered || justConfirmed)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
@@ -82,7 +109,10 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
                 <span style={{ background: 'rgba(6,12,35,0.65)', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 6 }}>👁 {liveViewers(session)} watching</span>
               </>
             ) : isUpcoming ? (
-              <span style={{ background: 'rgba(6,12,35,0.7)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6 }}>⏳ Starts in {countdown(session.startAt) || 'moments'}</span>
+              <>
+                <span style={{ background: 'rgba(6,12,35,0.7)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6 }}>⏳ Starts in {countdown(session.startAt) || 'moments'}</span>
+                {session.paidOnly && <span style={{ background: 'linear-gradient(90deg,#FFB020,#FF8A00)', color: 'white', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 6 }}>👑 PRO</span>}
+              </>
             ) : null}
           </div>
           <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10 }}>
@@ -178,7 +208,14 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
       {/* Pinned CTA — no dead whitespace below the fold, action always in thumb's reach */}
       {(isLive || isUpcoming) && (
         <div style={{ flexShrink: 0, background: 'white', borderTop: `1px solid ${BD}`, padding: '12px 16px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-          {isLive ? (
+          {proLocked ? (
+            <>
+              <button style={{ width: '100%', padding: '13px', borderRadius: 26, background: 'linear-gradient(90deg,#FFB020,#FF8A00)', color: 'white', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,138,0,0.35)' }}>
+                👑 Upgrade to join this session
+              </button>
+              <div style={{ fontSize: 10, color: T3, textAlign: 'center', marginTop: 7 }}>This session is exclusive to paid members</div>
+            </>
+          ) : isLive ? (
             <button onClick={() => onJoinLive(session)} style={{ width: '100%', padding: '13px', borderRadius: 26, background: '#FF3B5C', color: 'white', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,59,92,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
               Join Now
@@ -199,7 +236,7 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
         </div>
       )}
 
-      {showShare && <ShareSheet session={session} onClose={() => setShowShare(false)} />}
+      {showShare && <ShareSheet session={session} onClose={() => setShowShare(false)} onShare={onShare} />}
     </div>
   )
 }

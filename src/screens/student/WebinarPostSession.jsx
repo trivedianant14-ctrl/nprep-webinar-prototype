@@ -87,7 +87,7 @@ function QuizLevel({ onClose, onComplete }) {
   )
 }
 
-export default function WebinarPostSession({ session, isRegistered, isPaidUser, quizDone, onBack, onCompleteQuiz, onSubmitFollowUp }) {
+export default function WebinarPostSession({ session, isRegistered, isPaidUser, quizDone, shareCredits, isUnlocked, onUnlock, onBack, onCompleteQuiz, onSubmitFollowUp }) {
   const [showQuiz, setShowQuiz] = useState(false)
   const [followUp, setFollowUp] = useState('')
   const [followUpSaved, setFollowUpSaved] = useState(false)
@@ -106,7 +106,8 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
     setFollowUpSaved(true)
   }
 
-  const canSeeRecording = isPaidUser
+  // Paid members always; freemium too once they've spent a share-earned credit here
+  const canSeeRecording = isPaidUser || isUnlocked
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
@@ -195,6 +196,12 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(0,0,0,0.45)' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 <button style={{ padding: '7px 16px', borderRadius: 20, background: 'white', color: PD, fontSize: 11, fontWeight: 700, border: 'none' }}>Upgrade to unlock</button>
+                {/* Share-to-unlock alternative: spend a credit earned by sharing a session */}
+                {shareCredits > 0 && (
+                  <button onClick={() => onUnlock(session.id)} style={{ padding: '7px 16px', borderRadius: 20, background: 'linear-gradient(90deg,#FFB020,#FF8A00)', color: 'white', fontSize: 11, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 3px 10px rgba(255,138,0,0.4)' }}>
+                    🔓 Use 1 unlock credit ({shareCredits} left)
+                  </button>
+                )}
               </div>
             </div>
           )}

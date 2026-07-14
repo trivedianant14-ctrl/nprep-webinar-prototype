@@ -12,6 +12,7 @@ export default function StudentApp({
   sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap,
   webinarActions, webinarMidSessionIds,
   onRegister, onJoinLive, onCompleteStudyMaterial, onEndSession, onCompleteQuiz, onSubmitFollowUp,
+  shareCredits, unlockedSessionIds, onShare, onUnlock,
   onExit,
 }) {
   const [screen, setScreen] = useState('home')
@@ -69,6 +70,8 @@ export default function StudentApp({
             toggleIsPaidUser={toggleIsPaidUser}
             webinarDiscountPct={webinarDiscountPct}
             programCap={programCap}
+            shareCredits={shareCredits}
+            unlockedSessionIds={unlockedSessionIds}
             openWebinar={(session) => openWebinar(session, 'webinar')}
             onExit={() => goTo('home')}
           />
@@ -79,10 +82,12 @@ export default function StudentApp({
             isRegistered={currentSession ? registeredWebinarIds.has(currentSession.id) : false}
             isMidSessionRegistrant={currentSession ? webinarMidSessionIds.has(currentSession.id) : false}
             studyMaterialDone={currentSession ? !!webinarActions[currentSession.id]?.studyMaterial : false}
+            isPaidUser={isPaidUser}
             onBack={() => goTo(webinarReturnTo)}
             onRegister={onRegister}
             onJoinLive={joinLive}
             onCompleteStudyMaterial={onCompleteStudyMaterial}
+            onShare={onShare}
           />
         )}
         {screen === 'live' && (
@@ -94,6 +99,9 @@ export default function StudentApp({
             isRegistered={currentSession ? registeredWebinarIds.has(currentSession.id) : false}
             isPaidUser={isPaidUser}
             quizDone={currentSession ? !!webinarActions[currentSession.id]?.quiz : false}
+            shareCredits={shareCredits}
+            isUnlocked={currentSession ? unlockedSessionIds.has(currentSession.id) : false}
+            onUnlock={onUnlock}
             onBack={() => goTo(webinarReturnTo)}
             onCompleteQuiz={onCompleteQuiz}
             onSubmitFollowUp={onSubmitFollowUp}

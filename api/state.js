@@ -6,12 +6,14 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const db = sql()
-  const [sessions, registrations, demoRegistrations, actions, notifications] = await Promise.all([
+  const [sessions, registrations, demoRegistrations, actions, notifications, shares, unlocks] = await Promise.all([
     db`SELECT * FROM sessions ORDER BY id`,
     db`SELECT * FROM registrations ORDER BY registered_at`,
     db`SELECT session_id, mid_session FROM registrations WHERE student_key = ${DEMO_STUDENT_KEY}`,
     db`SELECT * FROM actions WHERE student_key = ${DEMO_STUDENT_KEY}`,
     db`SELECT kind, title, body, created_at FROM notifications ORDER BY created_at ASC`,
+    db`SELECT session_id FROM shares WHERE student_key = ${DEMO_STUDENT_KEY}`,
+    db`SELECT session_id FROM unlocked_recordings WHERE student_key = ${DEMO_STUDENT_KEY}`,
   ])
 
   const registrantsBySession = {}
@@ -46,6 +48,10 @@ export default async function handler(req, res) {
     actionsBySession,
     discountPct,
     programCap: PROGRAM_DISCOUNT_CAP,
+    // Share-to-unlock: each shared session banks one credit; each credit opens one locked recording
+    shareCredits: shares.length - unlocks.length,
+    sharedSessionIds: shares.map(r => r.session_id),
+    unlockedSessionIds: unlocks.map(r => r.session_id),
     notifications: notifications.map(n => ({
       kind: n.kind,
       title: n.title,

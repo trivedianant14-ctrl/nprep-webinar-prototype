@@ -51,16 +51,21 @@ function LiveCard({ session, onOpen }) {
   )
 }
 
-// Upcoming — countdown chip on the thumbnail, Register / Registered CTA
-function UpcomingCard({ session, isRegistered, onOpen, tick }) {
+// Upcoming — countdown chip on the thumbnail, Register / Registered CTA.
+// Paid-only sessions show a PRO badge; freemium gets an Upgrade CTA instead of Register.
+function UpcomingCard({ session, isRegistered, isPaidUser, onOpen, tick }) {
   const cd = countdown(session.startAt)
+  const proLocked = session.paidOnly && !isPaidUser
   return (
-    <button onClick={() => onOpen(session)} style={{ width: '100%', textAlign: 'left', background: 'white', border: `1px solid ${BD}`, borderRadius: 16, overflow: 'hidden', marginBottom: 12, cursor: 'pointer', padding: 0 }}>
+    <button onClick={() => onOpen(session)} style={{ width: '100%', textAlign: 'left', background: 'white', border: `1px solid ${proLocked ? '#FFE082' : BD}`, borderRadius: 16, overflow: 'hidden', marginBottom: 12, cursor: 'pointer', padding: 0 }}>
       <Thumb session={session}>
-        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
           <span style={{ background: 'rgba(6,12,35,0.7)', color: 'white', fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6 }}>
             ⏳ Starts in {cd || 'moments'}
           </span>
+          {session.paidOnly && (
+            <span style={{ background: 'linear-gradient(90deg,#FFB020,#FF8A00)', color: 'white', fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 6, letterSpacing: '0.03em' }}>👑 PRO</span>
+          )}
         </div>
         <div style={{ position: 'absolute', left: 12, right: 12, bottom: 10 }}>
           <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 10, fontWeight: 600, marginBottom: 3 }}>{fmtWhen(session.startAt, session.endAt)}</div>
@@ -69,7 +74,9 @@ function UpcomingCard({ session, isRegistered, onOpen, tick }) {
       </Thumb>
       <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}><EducatorRow session={session} /></div>
-        {isRegistered ? (
+        {proLocked ? (
+          <span style={{ fontSize: 11.5, fontWeight: 800, color: '#8a5200', background: '#FFF4E0', border: '1px solid #FFE0AD', padding: '7px 14px', borderRadius: 20, flexShrink: 0 }}>🔒 Members only</span>
+        ) : isRegistered ? (
           <span style={{ fontSize: 11.5, fontWeight: 800, color: G, background: GL, border: `1px solid ${GB}`, padding: '7px 14px', borderRadius: 20, flexShrink: 0 }}>Registered ✓</span>
         ) : (
           <span style={{ fontSize: 12, fontWeight: 800, color: 'white', background: P, padding: '8px 18px', borderRadius: 20, flexShrink: 0, boxShadow: '0 3px 10px rgba(29,91,240,0.35)' }}>Register</span>
@@ -80,9 +87,10 @@ function UpcomingCard({ session, isRegistered, onOpen, tick }) {
 }
 
 // Past recording — play overlay + duration chip; lock scrim for freemium
-function PastCard({ session, isPaidUser, onOpen }) {
+// unless they've spent a share-earned credit on this one.
+function PastCard({ session, isPaidUser, isUnlocked, onOpen }) {
   const mins = Math.round((new Date(session.endAt) - new Date(session.startAt)) / 6e4)
-  const locked = !isPaidUser
+  const locked = !isPaidUser && !isUnlocked
   return (
     <button onClick={() => onOpen(session)} style={{ width: '100%', textAlign: 'left', background: 'white', border: `1px solid ${BD}`, borderRadius: 14, overflow: 'hidden', marginBottom: 10, cursor: 'pointer', padding: 0, display: 'flex' }}>
       <div style={{ width: 132, flexShrink: 0 }}>
@@ -101,14 +109,14 @@ function PastCard({ session, isPaidUser, onOpen }) {
           {(session.topperName || session.host)} · {new Date(session.startAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}
         </div>
         <span style={{ fontSize: 10, fontWeight: 700, color: locked ? '#B96A00' : G }}>
-          {locked ? '🔒 Recording · Upgrade to watch' : '▶ Watch recording'}
+          {locked ? '🔒 Recording · Upgrade to watch' : isUnlocked && !isPaidUser ? '🔓 Unlocked with credit · Watch' : '▶ Watch recording'}
         </span>
       </div>
     </button>
   )
 }
 
-export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, openWebinar, onExit }) {
+export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, openWebinar, onExit }) {
   // Re-render every 30s so countdown chips stay honest between server polls.
   const [tick, setTick] = useState(0)
   useEffect(() => {
@@ -125,7 +133,10 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
   const visibleUpcoming = []
   for (const s of scheduled) {
     visibleUpcoming.push(s)
-    if (!registeredWebinarIds.has(s.id)) break
+    // A members-only session a freemium user can't register for shouldn't dead-end the
+    // reveal chain — keep going so the next registerable session still surfaces.
+    const blocksChain = !registeredWebinarIds.has(s.id) && !(s.paidOnly && !isPaidUser)
+    if (blocksChain) break
   }
   const past = sessions.filter(s => s.status === 'completed')
     .sort((a, b) => new Date(b.endAt) - new Date(a.endAt))
@@ -168,10 +179,15 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
             <div style={{ background: `linear-gradient(180deg, ${PL} 0%, #F7FAFF 100%)`, border: `1px solid ${PB}`, borderRadius: 14, padding: '11px 13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
                 <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>🎁 Webinar Rewards</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.65 }}> / {programCap}% off</span></span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {shareCredits > 0 && (
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#8a5200', background: '#FFF4E0', border: '1px solid #FFE0AD', padding: '2px 8px', borderRadius: 12 }}>🔓 {shareCredits} unlock</span>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.65 }}> / {programCap}% off</span></span>
+                </span>
               </div>
               <LevelTrack pct={webinarDiscountPct} cap={programCap} />
-              <div style={{ fontSize: 9.5, color: T2, marginTop: 8 }}>+5% each — finish the study material, attend live & clear the quiz</div>
+              <div style={{ fontSize: 9.5, color: T2, marginTop: 8 }}>+5% each — finish the study material, attend live & clear the quiz · share a session to earn recording unlocks</div>
             </div>
           )}
         </div>
@@ -189,7 +205,7 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
           <>
             <div style={{ fontSize: 12, fontWeight: 700, color: T2, margin: `${live.length ? 8 : 0}px 0 10px`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Up Next</div>
             {visibleUpcoming.map(s => (
-              <UpcomingCard key={s.id} session={s} isRegistered={registeredWebinarIds.has(s.id)} onOpen={openWebinar} tick={tick} />
+              <UpcomingCard key={s.id} session={s} isRegistered={registeredWebinarIds.has(s.id)} isPaidUser={isPaidUser} onOpen={openWebinar} tick={tick} />
             ))}
           </>
         )}
@@ -200,7 +216,7 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
         {past.length > 0 && (
           <>
             <div style={{ fontSize: 12, fontWeight: 700, color: T2, margin: '18px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Past Sessions & Recordings</div>
-            {past.map(s => <PastCard key={s.id} session={s} isPaidUser={isPaidUser} onOpen={openWebinar} />)}
+            {past.map(s => <PastCard key={s.id} session={s} isPaidUser={isPaidUser} isUnlocked={unlockedSessionIds.has(s.id)} onOpen={openWebinar} />)}
           </>
         )}
       </div>

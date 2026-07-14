@@ -26,6 +26,23 @@ CREATE TABLE IF NOT EXISTS sessions (
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS start_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS end_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS thumbnail_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS paid_only BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS shares (
+  id SERIAL PRIMARY KEY,
+  student_key TEXT NOT NULL,
+  session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(student_key, session_id)
+);
+
+CREATE TABLE IF NOT EXISTS unlocked_recordings (
+  id SERIAL PRIMARY KEY,
+  student_key TEXT NOT NULL,
+  session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(student_key, session_id)
+);
 
 CREATE TABLE IF NOT EXISTS registrations (
   id SERIAL PRIMARY KEY,
@@ -96,8 +113,10 @@ const SESSIONS = [
     ],
   },
   {
-    // Far out — revealed in the app only after the one above is registered
+    // Far out — revealed in the app only after the one above is registered.
+    // Paid-only: demos the per-session access flag (freemium sees it locked with an upgrade CTA).
     status: 'scheduled', host: 'Aman Singhal', topperName: '',  topperRank: '',
+    paidOnly: true,
     topic: 'Cracking NORCET in 90 Days — A Study Plan That Works',
     startAt: at(36 * DAY), endAt: at(36 * DAY + 1 * HOUR),
     thumbnailUrl: 'https://picsum.photos/seed/nprep-plan/640/360',
@@ -145,13 +164,13 @@ async function main() {
   }
 
   console.log('Clearing existing demo data...')
-  await sql.query('TRUNCATE followups, notifications, actions, registrations, sessions RESTART IDENTITY CASCADE')
+  await sql.query('TRUNCATE followups, notifications, actions, registrations, shares, unlocked_recordings, sessions RESTART IDENTITY CASCADE')
 
   console.log('Seeding sessions...')
   for (const s of SESSIONS) {
     const [row] = await sql`
-      INSERT INTO sessions (status, host, topper_name, topper_rank, topic, start_at, end_at, thumbnail_url, youtube_embed_id, study_material_url, recording_url, cancelled_reason)
-      VALUES (${s.status}, ${s.host}, ${s.topperName}, ${s.topperRank}, ${s.topic}, ${s.startAt}, ${s.endAt}, ${s.thumbnailUrl}, ${s.youtubeEmbedId}, ${s.studyMaterialUrl}, ${s.recordingUrl}, ${s.cancelledReason || ''})
+      INSERT INTO sessions (status, host, topper_name, topper_rank, topic, start_at, end_at, thumbnail_url, youtube_embed_id, study_material_url, recording_url, cancelled_reason, paid_only)
+      VALUES (${s.status}, ${s.host}, ${s.topperName}, ${s.topperRank}, ${s.topic}, ${s.startAt}, ${s.endAt}, ${s.thumbnailUrl}, ${s.youtubeEmbedId}, ${s.studyMaterialUrl}, ${s.recordingUrl}, ${s.cancelledReason || ''}, ${s.paidOnly || false})
       RETURNING id
     `
     let i = 0

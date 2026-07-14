@@ -4,7 +4,7 @@ import { computeStatus } from '../_lib/status.js'
 
 const FIELD_MAP = {
   host: 'host', topperName: 'topper_name', topperRank: 'topper_rank', topic: 'topic',
-  startAt: 'start_at', endAt: 'end_at', thumbnailUrl: 'thumbnail_url',
+  startAt: 'start_at', endAt: 'end_at', thumbnailUrl: 'thumbnail_url', paidOnly: 'paid_only',
   youtubeEmbedId: 'youtube_embed_id', studyMaterialUrl: 'study_material_url',
   recordingUrl: 'recording_url', cancelledReason: 'cancelled_reason', status: 'status',
 }

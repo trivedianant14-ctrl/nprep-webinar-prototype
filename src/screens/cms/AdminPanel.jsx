@@ -227,6 +227,13 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                       Hidden from the student app. Registered students were told via push + WhatsApp (see Notification Log).
                     </div>
                   )}
+                  {/* Per-session access control (PRD P2, pulled forward): freemium sees the
+                      card with a PRO lock + upgrade CTA instead of Register */}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer', width: 'fit-content' }}>
+                    <input type="checkbox" checked={!!selected.paidOnly} onChange={e => onUpdateSession(selectedId, { paidOnly: e.target.checked })} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#8a5200' }}>👑 Paid members only</span>
+                    <span style={{ fontSize: 10, color: T3 }}>— freemium users see it locked with an upgrade CTA</span>
+                  </label>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
@@ -276,6 +283,28 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                       }}
                       style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${draft.youtubeEmbedId ? PB : BD}`, background: draft.youtubeEmbedId ? PL : 'white', color: draft.youtubeEmbedId ? PD : T3, fontSize: 11, fontWeight: 700, cursor: draft.youtubeEmbedId ? 'pointer' : 'not-allowed' }}>
                       Use YouTube thumbnail
+                    </button>
+                  </div>
+                </div>
+
+                {/* Topper coordination — the product's slice of the ops timeline: the
+                    co-host link goes to the topper at T-24h so they can test their setup */}
+                <div style={{ background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: T1, marginBottom: 3 }}>🎙 Topper & faculty access</div>
+                  <div style={{ fontSize: 10.5, color: T3, marginBottom: 10 }}>
+                    YouTube Live co-host link — send at T-24h, then the T-15 min check-in call catches technical issues before going live.
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <code style={{ flex: 1, minWidth: 220, fontSize: 11, color: T2, background: 'white', border: `1px solid ${BD}`, borderRadius: 8, padding: '8px 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      studio.youtube.com/live/{selected.youtubeEmbedId || 'xxxxxxxx'}/cohost?key=np-{selected.id}
+                    </code>
+                    <button onClick={(e) => { navigator.clipboard?.writeText(`https://studio.youtube.com/live/${selected.youtubeEmbedId}/cohost?key=np-${selected.id}`); e.target.textContent = 'Copied ✓'; setTimeout(() => { e.target.textContent = 'Copy link' }, 1500) }}
+                      style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${PB}`, background: PL, color: PD, fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                      Copy link
+                    </button>
+                    <button onClick={() => onSimulateReminder(selected, 'cohost')} disabled={selected.status !== 'scheduled'}
+                      style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: selected.status === 'scheduled' ? P : BD, color: selected.status === 'scheduled' ? 'white' : T3, fontSize: 11, fontWeight: 700, cursor: selected.status === 'scheduled' ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                      Send to {selected.topperName ? selected.topperName.split(' ')[0] : 'topper'} (T-24h)
                     </button>
                   </div>
                 </div>

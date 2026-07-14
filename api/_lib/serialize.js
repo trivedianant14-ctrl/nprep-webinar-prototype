@@ -11,6 +11,7 @@ export function serializeSession(row, registrants = []) {
     startAt: new Date(row.start_at).toISOString(),
     endAt: new Date(row.end_at).toISOString(),
     thumbnailUrl: row.thumbnail_url,
+    paidOnly: row.paid_only,
     youtubeEmbedId: row.youtube_embed_id,
     studyMaterialUrl: row.study_material_url,
     recordingUrl: row.recording_url,
