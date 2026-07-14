@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { P, PL, PB, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, BG2, BackHeader } from './shared'
+import { P, PL, PB, PD, G, GL, GB, R, RL, RB, T1, T2, T3, BD, BG2, BackHeader, ResourceList } from './shared'
 
 const QUIZ = [
   { q: 'Which level of care includes super-specialty institutes like AIIMS?', options: ['Primary Care', 'Secondary Care', 'Tertiary Care'], correct: 2 },
@@ -87,7 +87,7 @@ function QuizLevel({ onClose, onComplete }) {
   )
 }
 
-export default function WebinarPostSession({ session, isRegistered, isPaidUser, quizDone, shareCredits, isUnlocked, onUnlock, onBack, onCompleteQuiz, onSubmitFollowUp }) {
+export default function WebinarPostSession({ session, isRegistered, isPaidUser, quizDone, shareCredits, isUnlocked, attendedCount, thisSessionAttended, onUnlock, onBack, onCompleteQuiz, onSubmitFollowUp }) {
   const [showQuiz, setShowQuiz] = useState(false)
   const [followUp, setFollowUp] = useState('')
   const [followUpSaved, setFollowUpSaved] = useState(false)
@@ -120,6 +120,26 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
         {justEarned && quizDone && (
           <div style={{ background: GL, border: `1px solid ${GB}`, borderRadius: 10, padding: '9px 12px', fontSize: 12, fontWeight: 600, color: G, marginBottom: 16 }}>
             +5% discount earned for clearing the quiz — it's permanent 🎉
+          </div>
+        )}
+
+        {/* Attendance milestone rewards: watching 50%+ live pays out on the 1st and 2nd session */}
+        {thisSessionAttended && attendedCount === 1 && (
+          <div style={{ background: 'linear-gradient(90deg,#FFF4E0,#FFEACC)', border: '1.5px solid #FFD37E', borderRadius: 12, padding: '11px 13px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 11, animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+            <span style={{ fontSize: 24 }}>🎬</span>
+            <div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: '#8a5200' }}>Reward unlocked: FREE Premium Video!</div>
+              <div style={{ fontSize: 10.5, color: '#B96A00' }}>You watched 50%+ of your first live session — pick any premium video, on us.</div>
+            </div>
+          </div>
+        )}
+        {thisSessionAttended && attendedCount >= 2 && (
+          <div style={{ background: 'linear-gradient(90deg,#FFF4E0,#FFEACC)', border: '1.5px solid #FFD37E', borderRadius: 12, padding: '11px 13px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 11, animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+            <span style={{ fontSize: 24 }}>📝</span>
+            <div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: '#8a5200' }}>Reward unlocked: FREE Mini Test attempt!</div>
+              <div style={{ fontSize: 10.5, color: '#B96A00' }}>Two live sessions attended — one mini test on us, valid for 1 year.</div>
+            </div>
           </div>
         )}
 
@@ -173,6 +193,9 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
             </Section>
           </>
         )}
+
+        {/* Resources — downloadable PDFs from the marketing team */}
+        <ResourceList session={session} />
 
         {/* 3. Recording */}
         <Section title={isRegistered ? '3. Recording' : 'Recording'} done={false} noCheckbox>

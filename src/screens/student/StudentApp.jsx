@@ -5,6 +5,7 @@ import WebinarTab from './WebinarTab'
 import WebinarDetail from './WebinarDetail'
 import WebinarLive from './WebinarLive'
 import WebinarPostSession from './WebinarPostSession'
+import { attendedCountFrom } from './shared'
 
 const DEPTH = { home: 0, tests: 1, webinar: 1, detail: 2, post: 2, live: 3 }
 
@@ -30,6 +31,7 @@ export default function StudentApp({
   }
 
   const currentSession = sessions.find(s => s.id === currentId) || null
+  const attendedCount = attendedCountFrom(webinarActions)
 
   const openWebinar = (session, from = 'webinar') => {
     setCurrentId(session.id)
@@ -72,6 +74,7 @@ export default function StudentApp({
             programCap={programCap}
             shareCredits={shareCredits}
             unlockedSessionIds={unlockedSessionIds}
+            attendedCount={attendedCount}
             openWebinar={(session) => openWebinar(session, 'webinar')}
             onExit={() => goTo('home')}
           />
@@ -101,6 +104,8 @@ export default function StudentApp({
             quizDone={currentSession ? !!webinarActions[currentSession.id]?.quiz : false}
             shareCredits={shareCredits}
             isUnlocked={currentSession ? unlockedSessionIds.has(currentSession.id) : false}
+            attendedCount={attendedCount}
+            thisSessionAttended={currentSession ? !!webinarActions[currentSession.id]?.liveAttendance : false}
             onUnlock={onUnlock}
             onBack={() => goTo(webinarReturnTo)}
             onCompleteQuiz={onCompleteQuiz}

@@ -1,6 +1,6 @@
 import { computeStatus } from './status.js'
 
-export function serializeSession(row, registrants = []) {
+export function serializeSession(row, registrants = [], resources = []) {
   return {
     id: row.id,
     status: computeStatus(row),
@@ -21,5 +21,6 @@ export function serializeSession(row, registrants = []) {
       phone: r.student_phone,
       registeredAt: new Date(r.registered_at).toISOString().slice(0, 10),
     })),
+    resources: resources.map(r => ({ id: r.id, title: r.title, url: r.url })),
   }
 }

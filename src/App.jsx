@@ -69,6 +69,8 @@ export default function App() {
   const simulateReminder = async (session, kind) => { await api(`/sessions/${session.id}/reminder`, { method: 'POST', body: { kind } }) ; await refresh() }
   const shareSession = async (sessionId) => { const r = await api(`/sessions/${sessionId}/share`, { method: 'POST' }); await refresh(); return r }
   const unlockRecording = async (sessionId) => { await api(`/sessions/${sessionId}/unlock`, { method: 'POST' }); await refresh() }
+  const addResource = async (sessionId, title) => { await api(`/sessions/${sessionId}/resources`, { method: 'POST', body: { title } }); await refresh() }
+  const deleteResource = async (resourceId) => { await api(`/resources/${resourceId}`, { method: 'DELETE' }); await refresh() }
 
   const exitToLanding = () => setTopScreen('landing')
 
@@ -120,6 +122,8 @@ export default function App() {
           onCreateSession={createSession}
           notificationLog={state.notifications}
           onSimulateReminder={simulateReminder}
+          onAddResource={addResource}
+          onDeleteResource={deleteResource}
           onExit={exitToLanding}
         />
       )}

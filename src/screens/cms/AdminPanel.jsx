@@ -62,9 +62,10 @@ function WhatsAppBubble({ body }) {
   )
 }
 
-export default function AdminPanel({ sessions, onUpdateSession, onCreateSession, notificationLog, onSimulateReminder, onExit }) {
+export default function AdminPanel({ sessions, onUpdateSession, onCreateSession, notificationLog, onSimulateReminder, onAddResource, onDeleteResource, onExit }) {
   const [selectedId, setSelectedId] = useState(sessions[0]?.id ?? null)
   const [showLog, setShowLog] = useState(false)
+  const [newResourceTitle, setNewResourceTitle] = useState('')
   const selected = sessions.find(s => s.id === selectedId) || null
 
   // Local draft so typing doesn't fire a network request per keystroke — each field is
@@ -283,6 +284,40 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                       }}
                       style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${draft.youtubeEmbedId ? PB : BD}`, background: draft.youtubeEmbedId ? PL : 'white', color: draft.youtubeEmbedId ? PD : T3, fontSize: 11, fontWeight: 700, cursor: draft.youtubeEmbedId ? 'pointer' : 'not-allowed' }}>
                       Use YouTube thumbnail
+                    </button>
+                  </div>
+                </div>
+
+                {/* Resources — downloadable PDFs shown to students in the "Resources" section */}
+                <div style={{ background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: T1, marginBottom: 3 }}>📚 Resources (student downloads)</div>
+                  <div style={{ fontSize: 10.5, color: T3, marginBottom: 10 }}>
+                    PDFs uploaded here appear in the session's Resources section for registered students to download.
+                  </div>
+                  {(selected.resources || []).map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'white', border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px', marginBottom: 6 }}>
+                      <span style={{ fontSize: 13 }}>📄</span>
+                      <span style={{ flex: 1, fontSize: 11.5, fontWeight: 600, color: T1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</span>
+                      <span style={{ fontSize: 9, color: T3 }}>{r.url}</span>
+                      <button onClick={() => onDeleteResource(r.id)} style={{ background: 'none', border: 'none', color: R, fontSize: 15, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }} title="Remove">×</button>
+                    </div>
+                  ))}
+                  {(selected.resources || []).length === 0 && (
+                    <div style={{ fontSize: 11, color: T3, marginBottom: 8 }}>No resources uploaded yet.</div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={newResourceTitle}
+                      onChange={e => setNewResourceTitle(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && newResourceTitle.trim()) { onAddResource(selectedId, newResourceTitle.trim()); setNewResourceTitle('') } }}
+                      placeholder='e.g. "Revision Formula Sheet (PDF)"'
+                    />
+                    <button
+                      disabled={!newResourceTitle.trim()}
+                      onClick={() => { onAddResource(selectedId, newResourceTitle.trim()); setNewResourceTitle('') }}
+                      style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: newResourceTitle.trim() ? P : BD, color: newResourceTitle.trim() ? 'white' : T3, fontSize: 11, fontWeight: 700, cursor: newResourceTitle.trim() ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+                      + Upload
                     </button>
                   </div>
                 </div>

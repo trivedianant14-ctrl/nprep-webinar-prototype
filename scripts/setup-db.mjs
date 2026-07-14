@@ -44,6 +44,14 @@ CREATE TABLE IF NOT EXISTS unlocked_recordings (
   UNIQUE(student_key, session_id)
 );
 
+CREATE TABLE IF NOT EXISTS resources (
+  id SERIAL PRIMARY KEY,
+  session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  url TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS registrations (
   id SERIAL PRIMARY KEY,
   session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -164,7 +172,7 @@ async function main() {
   }
 
   console.log('Clearing existing demo data...')
-  await sql.query('TRUNCATE followups, notifications, actions, registrations, shares, unlocked_recordings, sessions RESTART IDENTITY CASCADE')
+  await sql.query('TRUNCATE followups, notifications, actions, registrations, shares, unlocked_recordings, resources, sessions RESTART IDENTITY CASCADE')
 
   console.log('Seeding sessions...')
   for (const s of SESSIONS) {
@@ -180,6 +188,11 @@ async function main() {
         INSERT INTO registrations (session_id, student_key, student_name, student_phone)
         VALUES (${row.id}, ${'seed-' + row.id + '-' + i}, ${r.name}, ${r.phone})
       `
+    }
+    // Marketing-uploaded downloadables for the student "Resources" section
+    if (s.studyMaterialUrl) {
+      await sql`INSERT INTO resources (session_id, title, url) VALUES (${row.id}, 'Session Notes (PDF)', ${'/resources/' + row.id + '-notes.pdf'})`
+      await sql`INSERT INTO resources (session_id, title, url) VALUES (${row.id}, 'High-Yield MCQ Sheet (PDF)', ${'/resources/' + row.id + '-mcq-sheet.pdf'})`
     }
   }
 

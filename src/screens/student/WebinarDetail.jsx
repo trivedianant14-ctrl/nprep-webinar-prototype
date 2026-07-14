@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { P, PL, PB, PD, G, GL, GB, R, RL, RB, A, AL, AB, T1, T2, T3, BD, BG2, BackHeader, fmtWhen, countdown, liveViewers, Thumb } from './shared'
+import { P, PL, PB, PD, G, GL, GB, R, RL, RB, A, AL, AB, T1, T2, T3, BD, BG2, BackHeader, fmtWhen, countdown, liveViewers, Thumb, ResourceList } from './shared'
 
 function ShareSheet({ session, onClose, onShare }) {
   // null → not shared yet · 'earned' → credit banked · 'repeat' → already shared this session before
@@ -189,6 +189,9 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
               )}
             </div>
           )}
+
+          {/* Resources — marketing-uploaded PDFs, downloadable once registered */}
+          {!proLocked && (isRegistered || justConfirmed) && <ResourceList session={session} />}
 
           {studyMaterialSkipped && (
             <div style={{ fontSize: 10.5, color: T3, background: BG2, borderRadius: 10, padding: '8px 12px' }}>

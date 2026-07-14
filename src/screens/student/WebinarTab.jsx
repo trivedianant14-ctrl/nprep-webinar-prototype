@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor, fmtWhen, countdown, liveViewers, Thumb, LevelTrack } from './shared'
+import { P, PL, PB, PD, G, GL, GB, T1, T2, T3, BD, BG2, StatusBar, ctaFor, fmtWhen, countdown, liveViewers, Thumb, LevelTrack, JOURNEY, journeyStatus } from './shared'
+import RewardsJourney from './RewardsJourney'
 
 const LockIcon = ({ color = 'white', size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -116,13 +117,17 @@ function PastCard({ session, isPaidUser, isUnlocked, onOpen }) {
   )
 }
 
-export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, openWebinar, onExit }) {
+export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, attendedCount, openWebinar, onExit }) {
   // Re-render every 30s so countdown chips stay honest between server polls.
   const [tick, setTick] = useState(0)
+  const [showJourney, setShowJourney] = useState(false)
   useEffect(() => {
     const t = setInterval(() => setTick(x => x + 1), 30000)
     return () => clearInterval(t)
   }, [])
+
+  const { nextIdx } = journeyStatus(webinarDiscountPct, attendedCount)
+  const nextNode = nextIdx === -1 ? null : JOURNEY[nextIdx]
 
   const live = sessions.filter(s => s.status === 'live')
   // One upcoming at a time (live-class platform pattern): show the next session only;
@@ -176,9 +181,9 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </div>
           ) : (
-            <div style={{ background: `linear-gradient(180deg, ${PL} 0%, #F7FAFF 100%)`, border: `1px solid ${PB}`, borderRadius: 14, padding: '11px 13px' }}>
+            <button onClick={() => setShowJourney(true)} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(120deg, #FDE7F5 0%, #E9EFFF 60%, #E6FBEF 100%)', border: `1px solid ${PB}`, borderRadius: 14, padding: '11px 13px', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>🎁 Webinar Rewards</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>🗺️ Rewards Journey</span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {shareCredits > 0 && (
                     <span style={{ fontSize: 9.5, fontWeight: 800, color: '#8a5200', background: '#FFF4E0', border: '1px solid #FFE0AD', padding: '2px 8px', borderRadius: 12 }}>🔓 {shareCredits} unlock</span>
@@ -187,8 +192,26 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
                 </span>
               </div>
               <LevelTrack pct={webinarDiscountPct} cap={programCap} />
-              <div style={{ fontSize: 9.5, color: T2, marginTop: 8 }}>+5% each — finish the study material, attend live & clear the quiz · share a session to earn recording unlocks</div>
-            </div>
+              {/* Milestone gift pills — unlocked by attending live sessions */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 9, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 12, background: attendedCount >= 1 ? '#FFF4E0' : 'rgba(255,255,255,0.7)', color: attendedCount >= 1 ? '#B96A00' : T3, border: `1px solid ${attendedCount >= 1 ? '#FFE0AD' : BD}` }}>
+                  🎬 Premium video {attendedCount >= 1 ? 'UNLOCKED ✓' : '· attend 1 live'}
+                </span>
+                <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 12, background: attendedCount >= 2 ? '#FFF4E0' : 'rgba(255,255,255,0.7)', color: attendedCount >= 2 ? '#B96A00' : T3, border: `1px solid ${attendedCount >= 2 ? '#FFE0AD' : BD}` }}>
+                  📝 Mini test (1 yr) {attendedCount >= 2 ? 'UNLOCKED ✓' : '· attend 2 live'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
+                <span style={{ fontSize: 9.5, color: T2 }}>
+                  {nextNode
+                    ? <>Next: <b style={{ color: PD }}>{nextNode.kind === 'gift' ? `${nextNode.emoji} ${nextNode.label}` : `⭐ +5% off (${nextNode.val}%)`}</b></>
+                    : 'All rewards collected! 🎉'}
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 800, color: P, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                  View journey <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P} strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                </span>
+              </div>
+            </button>
           )}
         </div>
       )}
@@ -220,6 +243,15 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
           </>
         )}
       </div>
+
+      {showJourney && (
+        <RewardsJourney
+          discountPct={webinarDiscountPct}
+          attendedCount={attendedCount}
+          programCap={programCap}
+          onClose={() => setShowJourney(false)}
+        />
+      )}
     </div>
   )
 }

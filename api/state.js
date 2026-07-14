@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const db = sql()
-  const [sessions, registrations, demoRegistrations, actions, notifications, shares, unlocks] = await Promise.all([
+  const [sessions, registrations, demoRegistrations, actions, notifications, shares, unlocks, resources] = await Promise.all([
     db`SELECT * FROM sessions ORDER BY id`,
     db`SELECT * FROM registrations ORDER BY registered_at`,
     db`SELECT session_id, mid_session FROM registrations WHERE student_key = ${DEMO_STUDENT_KEY}`,
@@ -14,11 +14,17 @@ export default async function handler(req, res) {
     db`SELECT kind, title, body, created_at FROM notifications ORDER BY created_at ASC`,
     db`SELECT session_id FROM shares WHERE student_key = ${DEMO_STUDENT_KEY}`,
     db`SELECT session_id FROM unlocked_recordings WHERE student_key = ${DEMO_STUDENT_KEY}`,
+    db`SELECT id, session_id, title, url FROM resources ORDER BY id`,
   ])
 
   const registrantsBySession = {}
   for (const r of registrations) {
     (registrantsBySession[r.session_id] ??= []).push(r)
+  }
+
+  const resourcesBySession = {}
+  for (const r of resources) {
+    (resourcesBySession[r.session_id] ??= []).push(r)
   }
 
   const registeredSessionIds = demoRegistrations.map(r => r.session_id)
@@ -42,7 +48,7 @@ export default async function handler(req, res) {
   )
 
   res.status(200).json({
-    sessions: sessions.map(s => serializeSession(s, registrantsBySession[s.id] || [])),
+    sessions: sessions.map(s => serializeSession(s, registrantsBySession[s.id] || [], resourcesBySession[s.id] || [])),
     registeredSessionIds,
     midSessionIds,
     actionsBySession,
