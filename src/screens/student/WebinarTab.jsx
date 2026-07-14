@@ -117,7 +117,7 @@ function PastCard({ session, isPaidUser, isUnlocked, onOpen }) {
   )
 }
 
-export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, attendedCount, openWebinar, onExit }) {
+export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, attendedCount, openWebinar, onOpenReferrals, onExit }) {
   // Re-render every 30s so countdown chips stay honest between server polls.
   const [tick, setTick] = useState(0)
   const [showJourney, setShowJourney] = useState(false)
@@ -191,8 +191,8 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
                   <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.65 }}> / {programCap}% off</span></span>
                 </span>
               </div>
-              {/* Emotional copy leads — the mechanics (LevelTrack, pills) back it up */}
-              <div style={{ fontSize: 11, fontWeight: 700, color: T1, lineHeight: 1.4, marginBottom: 9 }}>
+              {/* Subtle tagline — the mechanics (LevelTrack, pills) do the talking */}
+              <div style={{ fontSize: 10, fontWeight: 600, color: T2, lineHeight: 1.4, marginBottom: 9 }}>
                 {nextNode ? nextNode.line : "You've unlocked every reward — Gold is yours. 🏆"}
               </div>
               <LevelTrack pct={webinarDiscountPct} cap={programCap} />
@@ -214,6 +214,15 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
           )}
         </div>
       )}
+
+      <button onClick={onOpenReferrals} style={{ flexShrink: 0, margin: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', background: 'linear-gradient(120deg, #EAF3DE 0%, #FFF4E0 100%)', border: `1px solid ${GB}`, borderRadius: 14, padding: '11px 13px', cursor: 'pointer' }}>
+        <span style={{ fontSize: 22 }}>🎁</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: G }}>Invite 3 friends, win a free test or video</div>
+          <div style={{ fontSize: 9.5, color: T2, marginTop: 1 }}>They join with your code + attend a session — you both win</div>
+        </div>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
 
       <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 24px' }}>
         {live.length > 0 && (

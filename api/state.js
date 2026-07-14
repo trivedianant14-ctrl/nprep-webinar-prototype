@@ -1,12 +1,13 @@
 import { sql } from './_lib/db.js'
 import { serializeSession } from './_lib/serialize.js'
+import { getOrCreateReferralCode } from './_lib/referral.js'
 import { DISCOUNT_PER_ACTION, SESSION_DISCOUNT_CAP, PROGRAM_DISCOUNT_CAP, DEMO_STUDENT_KEY } from './_lib/constants.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const db = sql()
-  const [sessions, registrations, demoRegistrations, actions, notifications, shares, unlocks, resources] = await Promise.all([
+  const [sessions, registrations, demoRegistrations, actions, notifications, shares, unlocks, resources, referralCode, referrals, referralReward] = await Promise.all([
     db`SELECT * FROM sessions ORDER BY id`,
     db`SELECT * FROM registrations ORDER BY registered_at`,
     db`SELECT session_id, mid_session FROM registrations WHERE student_key = ${DEMO_STUDENT_KEY}`,
@@ -15,6 +16,9 @@ export default async function handler(req, res) {
     db`SELECT session_id FROM shares WHERE student_key = ${DEMO_STUDENT_KEY}`,
     db`SELECT session_id FROM unlocked_recordings WHERE student_key = ${DEMO_STUDENT_KEY}`,
     db`SELECT id, session_id, title, url FROM resources ORDER BY id`,
+    getOrCreateReferralCode(db, DEMO_STUDENT_KEY),
+    db`SELECT id, friend_name, status FROM referrals WHERE referrer_key = ${DEMO_STUDENT_KEY} ORDER BY id`,
+    db`SELECT reward_type, claimed_at FROM referral_rewards WHERE student_key = ${DEMO_STUDENT_KEY}`,
   ])
 
   const registrantsBySession = {}
@@ -64,5 +68,10 @@ export default async function handler(req, res) {
       body: n.body,
       time: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     })),
+    // Referral program: invite 3 friends, each registers + attends 50%+ of a session,
+    // then the referrer picks a free test or a free video.
+    referralCode,
+    referrals: referrals.map(r => ({ id: r.id, friendName: r.friend_name, status: r.status })),
+    referralReward: referralReward.length ? { type: referralReward[0].reward_type, claimedAt: referralReward[0].claimed_at } : null,
   })
 }

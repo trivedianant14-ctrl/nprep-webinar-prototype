@@ -5,15 +5,17 @@ import WebinarTab from './WebinarTab'
 import WebinarDetail from './WebinarDetail'
 import WebinarLive from './WebinarLive'
 import WebinarPostSession from './WebinarPostSession'
+import ReferralJourney from './ReferralJourney'
 import { attendedCountFrom } from './shared'
 
-const DEPTH = { home: 0, tests: 1, webinar: 1, detail: 2, post: 2, live: 3 }
+const DEPTH = { home: 0, tests: 1, webinar: 1, detail: 2, post: 2, live: 3, referral: 2 }
 
 export default function StudentApp({
   sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap,
   webinarActions, webinarMidSessionIds,
   onRegister, onJoinLive, onCompleteStudyMaterial, onEndSession, onCompleteQuiz, onSubmitFollowUp,
   shareCredits, unlockedSessionIds, onShare, onUnlock,
+  referralCode, referrals, referralReward, onInviteFriend, onAdvanceReferral, onClaimReferralReward,
   onExit,
 }) {
   const [screen, setScreen] = useState('home')
@@ -76,7 +78,19 @@ export default function StudentApp({
             unlockedSessionIds={unlockedSessionIds}
             attendedCount={attendedCount}
             openWebinar={(session) => openWebinar(session, 'webinar')}
+            onOpenReferrals={() => goTo('referral')}
             onExit={() => goTo('home')}
+          />
+        )}
+        {screen === 'referral' && (
+          <ReferralJourney
+            code={referralCode}
+            referrals={referrals}
+            reward={referralReward}
+            onInvite={onInviteFriend}
+            onAdvance={onAdvanceReferral}
+            onClaim={onClaimReferralReward}
+            onClose={() => goTo('webinar')}
           />
         )}
         {screen === 'detail' && (

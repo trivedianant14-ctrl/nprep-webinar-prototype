@@ -88,6 +88,28 @@ CREATE TABLE IF NOT EXISTS followups (
   body TEXT NOT NULL,
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS referral_codes (
+  student_key TEXT PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS referrals (
+  id SERIAL PRIMARY KEY,
+  referrer_key TEXT NOT NULL,
+  friend_name TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'invited',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  registered_at TIMESTAMPTZ,
+  attended_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS referral_rewards (
+  student_key TEXT PRIMARY KEY,
+  reward_type TEXT NOT NULL,
+  claimed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `
 
 const now = Date.now()
@@ -172,7 +194,7 @@ async function main() {
   }
 
   console.log('Clearing existing demo data...')
-  await sql.query('TRUNCATE followups, notifications, actions, registrations, shares, unlocked_recordings, resources, sessions RESTART IDENTITY CASCADE')
+  await sql.query('TRUNCATE followups, notifications, actions, registrations, shares, unlocked_recordings, resources, sessions, referral_rewards, referrals, referral_codes RESTART IDENTITY CASCADE')
 
   console.log('Seeding sessions...')
   for (const s of SESSIONS) {

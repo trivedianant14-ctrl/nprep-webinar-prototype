@@ -91,6 +91,9 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
   const proLocked = session.paidOnly && !isPaidUser
   const studyMaterialSkipped = isMidSessionRegistrant && isLive
   const showMaterial = isUpcoming && !proLocked && (isRegistered || justConfirmed)
+  // Once registered, the teacher card + "what you get" perks have done their job —
+  // keep the screen focused on what's actually actionable: pre-session prep.
+  const registeredView = isRegistered || justConfirmed
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
@@ -135,42 +138,51 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
             )}
           </div>
 
-          {/* Educator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '11px 13px', marginBottom: 10 }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${P}, #6B96F8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-              {(session.topperName || session.host)[0]}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {session.topperName ? (
-                <>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: T1 }}>{session.topperName} <span style={{ fontSize: 10, fontWeight: 700, color: PD, background: PL, padding: '1px 7px', borderRadius: 10, marginLeft: 2 }}>{session.topperRank}</span></div>
-                  <div style={{ fontSize: 10.5, color: T2, marginTop: 2 }}>Hosted by {session.host} · NPrep Faculty</div>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: T1 }}>{session.host}</div>
-                  <div style={{ fontSize: 10.5, color: T2, marginTop: 2 }}>NPrep Faculty</div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* What you get */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
-            {PERKS.map(p => (
-              <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'white', border: `1px solid ${BD}`, borderRadius: 12, padding: '9px 11px' }}>
-                <span style={{ fontSize: 17 }}>{p.icon}</span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T1 }}>{p.label}</div>
-                  <div style={{ fontSize: 9, color: T3 }}>{p.sub}</div>
+          {/* Educator + "what you get" perks — only useful before registering; once in,
+              the screen should be all about pre-session prep. */}
+          {!registeredView && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: BG2, border: `1px solid ${BD}`, borderRadius: 12, padding: '11px 13px', marginBottom: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${P}, #6B96F8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                  {(session.topperName || session.host)[0]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {session.topperName ? (
+                    <>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: T1 }}>{session.topperName} <span style={{ fontSize: 10, fontWeight: 700, color: PD, background: PL, padding: '1px 7px', borderRadius: 10, marginLeft: 2 }}>{session.topperRank}</span></div>
+                      <div style={{ fontSize: 10.5, color: T2, marginTop: 2 }}>Hosted by {session.host} · NPrep Faculty</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: T1 }}>{session.host}</div>
+                      <div style={{ fontSize: 10.5, color: T2, marginTop: 2 }}>NPrep Faculty</div>
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                {PERKS.map(p => (
+                  <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'white', border: `1px solid ${BD}`, borderRadius: 12, padding: '9px 11px' }}>
+                    <span style={{ fontSize: 17 }}>{p.icon}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T1 }}>{p.label}</div>
+                      <div style={{ fontSize: 9, color: T3 }}>{p.sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Study material — clean status card, only once registered */}
           {showMaterial && (
             <>
+              {registeredView && (
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: G, marginBottom: 8 }}>
+                  ✅ You're registered — here's your pre-session prep
+                </div>
+              )}
               {!studyMaterialDone && (
                 <div style={{ fontSize: 10.5, fontWeight: 700, color: PD, background: PL, border: `1px solid ${PB}`, borderRadius: 10, padding: '7px 11px', marginBottom: 8 }}>
                   📚 Toppers read before they show up. This is your edge — and it's worth +5% toward Gold.

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 // Shared color tokens + small pieces reused across the student-facing webinar screens.
 export const P = '#1D5BF0', PL = '#EAF0FE', PB = '#A9C4FA', PD = '#12339B'
 export const G = '#3B6D11', GL = '#EAF3DE', GB = '#97C459'
@@ -49,24 +51,89 @@ export function attendedCountFrom(actionsBySession) {
 
 // The rewards journey, told as a pictorial student-to-nurse arc — each node's icon is a
 // stage of that becoming (backpack → books → clinic → exam → cap → nurse), not a candy.
-// `line` is the emotional copy shown at that milestone; `sub` is the practical instruction.
+// `line` is a short, subtle tagline shown at that milestone; `sub` is the practical instruction.
 export const JOURNEY = [
-  { kind: 'pct', val: 5, icon: '🎒', line: 'Every nurse starts with a first step. You just took yours.' },
-  { kind: 'pct', val: 10, icon: '📖', line: "You're building the habit toppers are made of." },
-  { kind: 'pct', val: 15, icon: '✍️', line: 'Halfway to your first reward — keep showing up.' },
-  { kind: 'gift', id: 'video', emoji: '🎬', label: 'FREE Premium Video', sub: 'Attend 1 live session (50%+)', attended: 1, line: 'You showed up live. This one\'s on us.' },
-  { kind: 'pct', val: 20, icon: '🩺', line: "20% closer to Gold — NORCET toppers are built like this." },
-  { kind: 'pct', val: 25, icon: '📋', line: "Past the midpoint. Gold is starting to feel real." },
-  { kind: 'pct', val: 30, icon: '🎯', line: 'So close now. Do not stop.' },
-  { kind: 'gift', id: 'test', emoji: '📝', label: 'FREE Mini Test', sub: 'Attend 2 live sessions · valid 1 year', attended: 2, line: 'Two sessions in. A free mini test, on the house.' },
-  { kind: 'pct', val: 35, icon: '🎓', line: 'One step from Gold. You are almost a topper.' },
-  { kind: 'pct', val: 40, grand: true, icon: '👩‍⚕️', line: "You're this close to cracking NORCET — join Gold and finish the job." },
+  { kind: 'pct', val: 5, icon: '🎒', line: 'Your journey begins' },
+  { kind: 'pct', val: 10, icon: '📖', line: 'Building the habit' },
+  { kind: 'pct', val: 15, icon: '✍️', line: 'Halfway to your first reward' },
+  { kind: 'gift', id: 'video', emoji: '🎬', label: 'FREE Premium Video', sub: 'Attend 1 live session (50%+)', attended: 1, line: 'Reward unlocked!' },
+  { kind: 'pct', val: 20, icon: '🩺', line: 'Almost there, topper' },
+  { kind: 'pct', val: 25, icon: '📋', line: 'Past the midpoint' },
+  { kind: 'pct', val: 30, icon: '🎯', line: 'So close now' },
+  { kind: 'gift', id: 'test', emoji: '📝', label: 'FREE Mini Test', sub: 'Attend 2 live sessions · valid 1 year', attended: 2, line: 'Second reward unlocked!' },
+  { kind: 'pct', val: 35, icon: '🎓', line: 'One step from Gold' },
+  { kind: 'pct', val: 40, grand: true, icon: '👩‍⚕️', line: 'Gold unlocked — you did it!' },
 ]
 
 export function journeyStatus(discountPct, attendedCount) {
   const earned = (n) => n.kind === 'pct' ? discountPct >= n.val : attendedCount >= n.attended
   const nextIdx = JOURNEY.findIndex(n => !earned(n))
   return { earned, nextIdx }
+}
+
+// Vibrant grass-and-trail backdrop shared by the game-map screens (rewards journey,
+// referral path) — a hillside gradient rather than a candy-colored board.
+export const GRASS_BG = 'linear-gradient(180deg, #BEE7F5 0%, #DCF2B8 16%, #B7E892 38%, #8FD46B 62%, #5CB84C 84%, #3E9E3A 100%)'
+
+// Smooth, natural-looking curve through a series of points (Catmull-Rom → cubic Bezier),
+// used to draw a winding trail instead of straight zig-zag segments.
+export function smoothPath(pts) {
+  if (pts.length < 2) return ''
+  let d = `M ${pts[0].x} ${pts[0].y} `
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i === 0 ? 0 : i - 1]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1]
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += `C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y} `
+  }
+  return d
+}
+
+// Mira, the NPrep mascot, explains the game mechanics story-mode style (Clash of Clans-
+// style guide character) — tap to advance, skippable at any point. Shown once per device
+// (shared across the rewards journey and referral screens via the same flag), replayable
+// via a small "?" hint icon on either screen.
+const MIRA_SEEN_KEY = 'nprep_mira_intro_seen'
+export const MASCOT_MESSAGES = [
+  "Hi, I'm Mira! Let's turn your NORCET prep into rewards.",
+  'Attend live sessions, read study material, and clear quizzes — each one pushes your discount toward 40% off Gold.',
+  "Invite 3 friends with your code. Once they join and watch a session, you win — pick a free test or a free video.",
+  'Tap any milestone on the map to see exactly what’s next.',
+  'Your dream career is waiting — let’s start learning.',
+]
+
+export function useMiraIntro() {
+  const [open, setOpen] = useState(() => typeof window !== 'undefined' && !window.localStorage.getItem(MIRA_SEEN_KEY))
+  const dismiss = () => { window.localStorage.setItem(MIRA_SEEN_KEY, '1'); setOpen(false) }
+  const relaunch = () => setOpen(true)
+  return [open, dismiss, relaunch]
+}
+
+export function MiraIntro({ open, onDone }) {
+  const [idx, setIdx] = useState(0)
+  if (!open) return null
+  const last = idx === MASCOT_MESSAGES.length - 1
+  const advance = () => { if (last) onDone(); else setIdx(i => i + 1) }
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,12,35,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={advance}>
+      <button onClick={e => { e.stopPropagation(); onDone() }} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.16)', border: 'none', color: 'white', fontSize: 10.5, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer' }}>Skip ✕</button>
+      <div key={idx} style={{ width: '100%', maxWidth: 320, padding: '0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+        <div style={{ background: `linear-gradient(135deg, ${PD}, ${P})`, border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: 18, padding: '14px 17px', marginBottom: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
+          <div style={{ color: 'white', fontSize: 13.5, fontWeight: 700, lineHeight: 1.5, textAlign: 'center' }}>{MASCOT_MESSAGES[idx]}</div>
+        </div>
+        <img src="/mascot-mira.png" alt="Mira" style={{ width: 148, height: 'auto', filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.5))' }} />
+        <div style={{ display: 'flex', gap: 5, marginTop: 16 }}>
+          {MASCOT_MESSAGES.map((_, i) => <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i === idx ? 'white' : 'rgba(255,255,255,0.3)' }} />)}
+        </div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 10 }}>Tap to {last ? 'start' : 'continue'}</div>
+      </div>
+    </div>
+  )
 }
 
 // Generates a small real PDF client-side so "Download" actually downloads in the demo.

@@ -71,6 +71,9 @@ export default function App() {
   const unlockRecording = async (sessionId) => { await api(`/sessions/${sessionId}/unlock`, { method: 'POST' }); await refresh() }
   const addResource = async (sessionId, title) => { await api(`/sessions/${sessionId}/resources`, { method: 'POST', body: { title } }); await refresh() }
   const deleteResource = async (resourceId) => { await api(`/resources/${resourceId}`, { method: 'DELETE' }); await refresh() }
+  const inviteFriend = async (friendName) => { await api('/referrals', { method: 'POST', body: { friendName } }); await refresh() }
+  const advanceReferral = async (id) => { await api(`/referrals/${id}/advance`, { method: 'POST' }); await refresh() }
+  const claimReferralReward = async (rewardType) => { await api('/referrals/claim', { method: 'POST', body: { rewardType } }); await refresh() }
 
   const exitToLanding = () => setTopScreen('landing')
 
@@ -110,6 +113,12 @@ export default function App() {
             unlockedSessionIds={new Set(state.unlockedSessionIds)}
             onShare={shareSession}
             onUnlock={unlockRecording}
+            referralCode={state.referralCode}
+            referrals={state.referrals}
+            referralReward={state.referralReward}
+            onInviteFriend={inviteFriend}
+            onAdvanceReferral={advanceReferral}
+            onClaimReferralReward={claimReferralReward}
             onExit={exitToLanding}
           />
         </div>
