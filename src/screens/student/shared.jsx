@@ -107,9 +107,13 @@ export const MASCOT_MESSAGES = [
   'Your dream career is waiting — let’s start learning.',
 ]
 
-export function useMiraIntro() {
-  const [open, setOpen] = useState(() => typeof window !== 'undefined' && !window.localStorage.getItem(MIRA_SEEN_KEY))
-  const dismiss = () => { window.localStorage.setItem(MIRA_SEEN_KEY, '1'); setOpen(false) }
+// Each screen gets its own one-time greeting (scoped key) so Mira introduces herself the
+// first time a student opens the journey map AND the first time they open referrals,
+// rather than only ever once across the whole app. The "?" hint replays her on either.
+export function useMiraIntro(scope = 'default') {
+  const key = `${MIRA_SEEN_KEY}_${scope}`
+  const [open, setOpen] = useState(() => typeof window !== 'undefined' && !window.localStorage.getItem(key))
+  const dismiss = () => { window.localStorage.setItem(key, '1'); setOpen(false) }
   const relaunch = () => setOpen(true)
   return [open, dismiss, relaunch]
 }
@@ -157,8 +161,9 @@ export function MiraIntro({ open, onDone }) {
         <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
       </div>
 
-      {/* Speech bubble floating beside her head */}
-      <div key={idx} style={{ position: 'absolute', left: '38%', bottom: '30%', maxWidth: '56%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
+      {/* Speech bubble sits just above her head with the tail dropping to her mouth,
+          rather than a caption box that covers her face */}
+      <div key={idx} style={{ position: 'absolute', left: '26%', bottom: '46%', maxWidth: '62%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
         <div style={{ color: T1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45 }}>{MASCOT_MESSAGES[idx]}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
           <div style={{ display: 'flex', gap: 4 }}>
@@ -166,8 +171,8 @@ export function MiraIntro({ open, onDone }) {
           </div>
           <span style={{ fontSize: 9, color: T3, fontWeight: 600 }}>Tap to {last ? 'start' : 'continue'}</span>
         </div>
-        <span style={{ position: 'absolute', left: -12, bottom: 16, width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: `12px solid ${PD}` }} />
-        <span style={{ position: 'absolute', left: -9, bottom: 16, width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: '11px solid white' }} />
+        <span style={{ position: 'absolute', left: 22, bottom: -13, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `14px solid ${PD}` }} />
+        <span style={{ position: 'absolute', left: 24, bottom: -10, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '11px solid white' }} />
       </div>
     </div>
   )

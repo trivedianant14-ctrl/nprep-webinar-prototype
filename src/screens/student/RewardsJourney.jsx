@@ -30,7 +30,7 @@ const DECOR = [
 
 export default function RewardsJourney({ discountPct, attendedCount, programCap, onClose }) {
   const scrollRef = useRef(null)
-  const [miraOpen, dismissMira, relaunchMira] = useMiraIntro()
+  const [miraOpen, dismissMira, relaunchMira] = useMiraIntro('journey')
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, [])
 
   const { earned, nextIdx } = journeyStatus(discountPct, attendedCount)

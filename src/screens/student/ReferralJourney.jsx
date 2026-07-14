@@ -55,7 +55,7 @@ function CodeCard({ code }) {
 }
 
 export default function ReferralJourney({ code, referrals, reward, onInvite, onAdvance, onClaim, onClose }) {
-  const [miraOpen, dismissMira, relaunchMira] = useMiraIntro()
+  const [miraOpen, dismissMira, relaunchMira] = useMiraIntro('referral')
   const [nameInput, setNameInput] = useState('')
 
   const attendedCount = referrals.filter(r => r.status === 'attended').length
