@@ -47,19 +47,20 @@ export function attendedCountFrom(actionsBySession) {
   return Object.values(actionsBySession || {}).filter(a => a.liveAttendance).length
 }
 
-// The full rewards journey, saga-map style: discount star nodes interleaved with the
-// attendance gift nodes, ending at the 40%-off grand prize.
+// The rewards journey, told as a pictorial student-to-nurse arc — each node's icon is a
+// stage of that becoming (backpack → books → clinic → exam → cap → nurse), not a candy.
+// `line` is the emotional copy shown at that milestone; `sub` is the practical instruction.
 export const JOURNEY = [
-  { kind: 'pct', val: 5 },
-  { kind: 'pct', val: 10 },
-  { kind: 'pct', val: 15 },
-  { kind: 'gift', id: 'video', emoji: '🎬', label: 'FREE Premium Video', sub: 'Attend 1 live session (50%+)', attended: 1 },
-  { kind: 'pct', val: 20 },
-  { kind: 'pct', val: 25 },
-  { kind: 'pct', val: 30 },
-  { kind: 'gift', id: 'test', emoji: '📝', label: 'FREE Mini Test', sub: 'Attend 2 live sessions · valid 1 year', attended: 2 },
-  { kind: 'pct', val: 35 },
-  { kind: 'pct', val: 40, grand: true },
+  { kind: 'pct', val: 5, icon: '🎒', line: 'Every nurse starts with a first step. You just took yours.' },
+  { kind: 'pct', val: 10, icon: '📖', line: "You're building the habit toppers are made of." },
+  { kind: 'pct', val: 15, icon: '✍️', line: 'Halfway to your first reward — keep showing up.' },
+  { kind: 'gift', id: 'video', emoji: '🎬', label: 'FREE Premium Video', sub: 'Attend 1 live session (50%+)', attended: 1, line: 'You showed up live. This one\'s on us.' },
+  { kind: 'pct', val: 20, icon: '🩺', line: "20% closer to Gold — NORCET toppers are built like this." },
+  { kind: 'pct', val: 25, icon: '📋', line: "Past the midpoint. Gold is starting to feel real." },
+  { kind: 'pct', val: 30, icon: '🎯', line: 'So close now. Do not stop.' },
+  { kind: 'gift', id: 'test', emoji: '📝', label: 'FREE Mini Test', sub: 'Attend 2 live sessions · valid 1 year', attended: 2, line: 'Two sessions in. A free mini test, on the house.' },
+  { kind: 'pct', val: 35, icon: '🎓', line: 'One step from Gold. You are almost a topper.' },
+  { kind: 'pct', val: 40, grand: true, icon: '👩‍⚕️', line: "You're this close to cracking NORCET — join Gold and finish the job." },
 ]
 
 export function journeyStatus(discountPct, attendedCount) {

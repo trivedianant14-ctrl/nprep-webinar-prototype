@@ -181,15 +181,19 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </div>
           ) : (
-            <button onClick={() => setShowJourney(true)} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(120deg, #FDE7F5 0%, #E9EFFF 60%, #E6FBEF 100%)', border: `1px solid ${PB}`, borderRadius: 14, padding: '11px 13px', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 9 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>🗺️ Rewards Journey</span>
+            <button onClick={() => setShowJourney(true)} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(120deg, #EAF0FE 0%, #F3F0FF 55%, #FFF4E0 100%)', border: `1px solid ${PB}`, borderRadius: 14, padding: '11px 13px', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>🎓 Your Road to NORCET Gold</span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {shareCredits > 0 && (
                     <span style={{ fontSize: 9.5, fontWeight: 800, color: '#8a5200', background: '#FFF4E0', border: '1px solid #FFE0AD', padding: '2px 8px', borderRadius: 12 }}>🔓 {shareCredits} unlock</span>
                   )}
                   <span style={{ fontSize: 12, fontWeight: 800, color: PD }}>{webinarDiscountPct}%<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.65 }}> / {programCap}% off</span></span>
                 </span>
+              </div>
+              {/* Emotional copy leads — the mechanics (LevelTrack, pills) back it up */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: T1, lineHeight: 1.4, marginBottom: 9 }}>
+                {nextNode ? nextNode.line : "You've unlocked every reward — Gold is yours. 🏆"}
               </div>
               <LevelTrack pct={webinarDiscountPct} cap={programCap} />
               {/* Milestone gift pills — unlocked by attending live sessions */}
@@ -201,14 +205,9 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
                   📝 Mini test (1 yr) {attendedCount >= 2 ? 'UNLOCKED ✓' : '· attend 2 live'}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
-                <span style={{ fontSize: 9.5, color: T2 }}>
-                  {nextNode
-                    ? <>Next: <b style={{ color: PD }}>{nextNode.kind === 'gift' ? `${nextNode.emoji} ${nextNode.label}` : `⭐ +5% off (${nextNode.val}%)`}</b></>
-                    : 'All rewards collected! 🎉'}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 9 }}>
                 <span style={{ fontSize: 10, fontWeight: 800, color: P, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                  View journey <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P} strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  See your journey <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={P} strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
                 </span>
               </div>
             </button>

@@ -170,7 +170,13 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
 
           {/* Study material — clean status card, only once registered */}
           {showMaterial && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'white', border: `1px solid ${studyMaterialDone ? GB : BD}`, borderRadius: 12, padding: '11px 13px', marginBottom: 10 }}>
+            <>
+              {!studyMaterialDone && (
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: PD, background: PL, border: `1px solid ${PB}`, borderRadius: 10, padding: '7px 11px', marginBottom: 8 }}>
+                  📚 Toppers read before they show up. This is your edge — and it's worth +5% toward Gold.
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'white', border: `1px solid ${studyMaterialDone ? GB : BD}`, borderRadius: 12, padding: '11px 13px', marginBottom: 10 }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: studyMaterialDone ? GL : PL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
                 {studyMaterialDone ? '✅' : '📄'}
               </div>
@@ -187,7 +193,8 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
               ) : (
                 <span style={{ fontSize: 9.5, fontWeight: 700, color: A, background: AL, border: `1px solid ${AB}`, padding: '3px 9px', borderRadius: 20, flexShrink: 0 }}>Soon</span>
               )}
-            </div>
+              </div>
+            </>
           )}
 
           {/* Resources — marketing-uploaded PDFs, downloadable once registered */}
@@ -225,6 +232,9 @@ export default function WebinarDetail({ session, isRegistered, isMidSessionRegis
             </button>
           ) : !isRegistered ? (
             <>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: PD, textAlign: 'center', marginBottom: 8 }}>
+                🌱 Every session you join is a step closer to cracking NORCET.
+              </div>
               <button onClick={handleRegister} style={{ width: '100%', padding: '13px', borderRadius: 26, background: P, color: 'white', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(29,91,240,0.35)' }}>
                 Register for Free
               </button>

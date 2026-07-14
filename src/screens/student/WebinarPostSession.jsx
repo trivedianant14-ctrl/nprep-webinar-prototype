@@ -156,18 +156,23 @@ export default function WebinarPostSession({ session, isRegistered, isPaidUser, 
                   </div>
                 </div>
               ) : (
-                <button onClick={() => setShowQuiz(true)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, background: `linear-gradient(120deg, ${P} 0%, #7C3AED 100%)`, border: 'none', borderRadius: 16, padding: '14px 15px', cursor: 'pointer', textAlign: 'left', boxShadow: '0 5px 16px rgba(29,91,240,0.32)' }}>
-                  <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, animation: 'nodePulse 1.8s ease-in-out infinite' }}>⭐</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: 'white' }}>Quiz Level</div>
-                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>{QUIZ.length} questions · clear it for +5% off</div>
+                <>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: PD, marginBottom: 8 }}>
+                    🎯 What you just learned is worth locking in. Two minutes now, +5% toward Gold forever.
                   </div>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'white', color: PD, fontSize: 12, fontWeight: 800, padding: '8px 16px', borderRadius: 20, flexShrink: 0 }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill={PD}><polygon points="5,3 19,12 5,21"/></svg>
-                    Play
-                  </span>
-                </button>
+                  <button onClick={() => setShowQuiz(true)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, background: `linear-gradient(120deg, ${P} 0%, #7C3AED 100%)`, border: 'none', borderRadius: 16, padding: '14px 15px', cursor: 'pointer', textAlign: 'left', boxShadow: '0 5px 16px rgba(29,91,240,0.32)' }}>
+                    <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, animation: 'nodePulse 1.8s ease-in-out infinite' }}>⭐</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: 'white' }}>Quiz Level</div>
+                      <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>{QUIZ.length} questions · clear it for +5% off</div>
+                    </div>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'white', color: PD, fontSize: 12, fontWeight: 800, padding: '8px 16px', borderRadius: 20, flexShrink: 0 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill={PD}><polygon points="5,3 19,12 5,21"/></svg>
+                      Play
+                    </span>
+                  </button>
+                </>
               )}
             </Section>
 
