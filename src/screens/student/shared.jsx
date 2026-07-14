@@ -120,17 +120,25 @@ export function MiraIntro({ open, onDone }) {
   const last = idx === MASCOT_MESSAGES.length - 1
   const advance = () => { if (last) onDone(); else setIdx(i => i + 1) }
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,12,35,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={advance}>
-      <button onClick={e => { e.stopPropagation(); onDone() }} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.16)', border: 'none', color: 'white', fontSize: 10.5, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer' }}>Skip ✕</button>
-      <div key={idx} style={{ width: '100%', maxWidth: 320, padding: '0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-        <div style={{ background: `linear-gradient(135deg, ${PD}, ${P})`, border: '1.5px solid rgba(255,255,255,0.25)', borderRadius: 18, padding: '14px 17px', marginBottom: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.35)' }}>
-          <div style={{ color: 'white', fontSize: 13.5, fontWeight: 700, lineHeight: 1.5, textAlign: 'center' }}>{MASCOT_MESSAGES[idx]}</div>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, cursor: 'pointer' }} onClick={advance}>
+      <button onClick={e => { e.stopPropagation(); onDone() }} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(6,12,35,0.55)', border: 'none', color: 'white', fontSize: 10.5, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', zIndex: 2 }}>Skip ✕</button>
+
+      {/* Mira, story-mode guide character anchored bottom-left (Clash of Clans-style) */}
+      <div style={{ position: 'absolute', left: 4, bottom: 0, height: '45%', display: 'flex', alignItems: 'flex-end', zIndex: 1 }}>
+        <img src="/mascot-mira.png" alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
+      </div>
+
+      {/* Speech bubble floating beside her head */}
+      <div key={idx} style={{ position: 'absolute', left: '38%', bottom: '30%', maxWidth: '56%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
+        <div style={{ color: T1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45 }}>{MASCOT_MESSAGES[idx]}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {MASCOT_MESSAGES.map((_, i) => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: i === idx ? PD : '#D8E2F5' }} />)}
+          </div>
+          <span style={{ fontSize: 9, color: T3, fontWeight: 600 }}>Tap to {last ? 'start' : 'continue'}</span>
         </div>
-        <img src="/mascot-mira.png" alt="Mira" style={{ width: 148, height: 'auto', filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.5))' }} />
-        <div style={{ display: 'flex', gap: 5, marginTop: 16 }}>
-          {MASCOT_MESSAGES.map((_, i) => <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i === idx ? 'white' : 'rgba(255,255,255,0.3)' }} />)}
-        </div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 10 }}>Tap to {last ? 'start' : 'continue'}</div>
+        <span style={{ position: 'absolute', left: -12, bottom: 16, width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: `12px solid ${PD}` }} />
+        <span style={{ position: 'absolute', left: -9, bottom: 16, width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderRight: '11px solid white' }} />
       </div>
     </div>
   )
