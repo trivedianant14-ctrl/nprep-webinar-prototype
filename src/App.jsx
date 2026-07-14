@@ -65,15 +65,15 @@ export default function App() {
   const completeStudyMaterial = async (sessionId) => { await api(`/sessions/${sessionId}/action`, { method: 'POST', body: { action: 'studyMaterial' } }); await refresh() }
   const endWebinarLive = async (session, opts) => { await api(`/sessions/${session.id}/end-live`, { method: 'POST', body: opts }); await refresh() }
   const completeWebinarQuiz = async (sessionId) => { await api(`/sessions/${sessionId}/action`, { method: 'POST', body: { action: 'quiz' } }); await refresh() }
-  const submitWebinarFollowUp = async (sessionId, text) => { await api(`/sessions/${sessionId}/followup`, { method: 'POST', body: { text } }); await refresh() }
-  const simulateReminder = async (session, kind) => { await api(`/sessions/${session.id}/reminder`, { method: 'POST', body: { kind } }) ; await refresh() }
+  const submitWebinarFollowUp = async (sessionId, text) => { await api(`/sessions/${sessionId}/action`, { method: 'POST', body: { action: 'followup', text } }); await refresh() }
+  const simulateReminder = async (session, kind) => { await api(`/sessions/${session.id}/action`, { method: 'POST', body: { action: 'reminder', kind } }) ; await refresh() }
   const shareSession = async (sessionId) => { const r = await api(`/sessions/${sessionId}/share`, { method: 'POST' }); await refresh(); return r }
   const unlockRecording = async (sessionId) => { await api(`/sessions/${sessionId}/unlock`, { method: 'POST' }); await refresh() }
   const addResource = async (sessionId, title) => { await api(`/sessions/${sessionId}/resources`, { method: 'POST', body: { title } }); await refresh() }
   const deleteResource = async (resourceId) => { await api(`/resources/${resourceId}`, { method: 'DELETE' }); await refresh() }
-  const inviteFriend = async (friendName) => { await api('/referrals', { method: 'POST', body: { friendName } }); await refresh() }
-  const advanceReferral = async (id) => { await api(`/referrals/${id}/advance`, { method: 'POST' }); await refresh() }
-  const claimReferralReward = async (rewardType) => { await api('/referrals/claim', { method: 'POST', body: { rewardType } }); await refresh() }
+  const inviteFriend = async (friendName) => { await api('/referrals', { method: 'POST', body: { op: 'invite', friendName } }); await refresh() }
+  const advanceReferral = async (id) => { await api('/referrals', { method: 'POST', body: { op: 'advance', id } }); await refresh() }
+  const claimReferralReward = async (rewardType) => { await api('/referrals', { method: 'POST', body: { op: 'claim', rewardType } }); await refresh() }
 
   const exitToLanding = () => setTopScreen('landing')
 
