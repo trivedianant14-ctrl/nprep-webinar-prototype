@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // Shared color tokens + small pieces reused across the student-facing webinar screens.
 export const P = '#1D5BF0', PL = '#EAF0FE', PB = '#A9C4FA', PD = '#12339B'
@@ -114,8 +114,37 @@ export function useMiraIntro() {
   return [open, dismiss, relaunch]
 }
 
+// The source mascot render has a solid black backdrop baked in (not real alpha
+// transparency) — key it out client-side on a canvas so Mira reads as a cutout
+// character over whatever screen she's guiding, the way a story-mode game mascot would.
+function useChromaKeyedImage(src, threshold = 24) {
+  const [url, setUrl] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const px = frame.data
+      for (let i = 0; i < px.length; i += 4) {
+        if (px[i] < threshold && px[i + 1] < threshold && px[i + 2] < threshold) px[i + 3] = 0
+      }
+      ctx.putImageData(frame, 0, 0)
+      if (!cancelled) setUrl(canvas.toDataURL())
+    }
+    img.src = src
+    return () => { cancelled = true }
+  }, [src, threshold])
+  return url
+}
+
 export function MiraIntro({ open, onDone }) {
   const [idx, setIdx] = useState(0)
+  const mascotUrl = useChromaKeyedImage('/mascot-mira.png')
   if (!open) return null
   const last = idx === MASCOT_MESSAGES.length - 1
   const advance = () => { if (last) onDone(); else setIdx(i => i + 1) }
@@ -125,7 +154,7 @@ export function MiraIntro({ open, onDone }) {
 
       {/* Mira, story-mode guide character anchored bottom-left (Clash of Clans-style) */}
       <div style={{ position: 'absolute', left: 4, bottom: 0, height: '45%', display: 'flex', alignItems: 'flex-end', zIndex: 1 }}>
-        <img src="/mascot-mira.png" alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
+        <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
       </div>
 
       {/* Speech bubble floating beside her head */}
