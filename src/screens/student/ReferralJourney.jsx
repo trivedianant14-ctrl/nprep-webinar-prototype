@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { P, PD, G, GL, GB, T1, T2, T3, BD, GRASS_BG, smoothPath, useMiraIntro, MiraIntro } from './shared'
+import { P, PD, G, GL, GB, T1, T2, T3, BD, GRASS_BG, smoothPath, useMiraIntro, MiraIntro, MASCOT_MESSAGES_REFERRAL } from './shared'
 
 const W = 398, H = 520
 // Friend 1 → Friend 2 → Friend 3 → Reward chest, winding up the same grass hillside style
@@ -192,7 +192,7 @@ export default function ReferralJourney({ code, referrals, reward, onInvite, onA
         </div>
       </div>
 
-      <MiraIntro open={miraOpen} onDone={dismissMira} />
+      <MiraIntro open={miraOpen} onDone={dismissMira} messages={MASCOT_MESSAGES_REFERRAL} />
     </div>
   )
 }

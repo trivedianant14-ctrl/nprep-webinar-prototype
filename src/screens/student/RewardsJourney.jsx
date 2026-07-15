@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { P, PD, G, T1, T2, T3, JOURNEY, journeyStatus, GRASS_BG, smoothPath, useMiraIntro, MiraIntro, resetMiraIntroSeen } from './shared'
+import { P, PD, G, T1, T2, T3, JOURNEY, journeyStatus, GRASS_BG, smoothPath, useMiraIntro, MiraIntro, MASCOT_MESSAGES_JOURNEY, resetMiraIntroSeen } from './shared'
 
 // A pictorial student-to-nurse journey: each node's icon is a stage of that becoming
 // (backpack → books → studying → clinic → exam → cap → nurse), reaching the 40%-off
@@ -146,7 +146,7 @@ export default function RewardsJourney({ discountPct, attendedCount, programCap,
         </div>
       </div>
 
-      <MiraIntro open={miraOpen} onDone={dismissMira} />
+      <MiraIntro open={miraOpen} onDone={dismissMira} messages={MASCOT_MESSAGES_JOURNEY} />
     </div>
   )
 }

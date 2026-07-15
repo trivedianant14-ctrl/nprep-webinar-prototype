@@ -23,6 +23,7 @@ function Field({ label, children }) {
 }
 
 const inputStyle = { width: '100%', padding: '9px 12px', border: `1px solid ${BD}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', color: T1 }
+const lockedInputStyle = { ...inputStyle, background: BG2, color: T3, cursor: 'not-allowed' }
 
 // ISO ↔ datetime-local ("YYYY-MM-DDTHH:mm" in the marketer's local time)
 const toLocal = (iso) => {
@@ -104,6 +105,11 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
   }
 
   const st = selected ? STATUS_STYLE[selected.status] : null
+  // Once a session is Live, its listing has already gone out to students — rewriting the
+  // name/topic/schedule underneath them would misrepresent what was actually promoted or
+  // broadcast. Completed is the historical record of what happened, so it's frozen too.
+  // Only the recording (explicitly uploaded afterward) and resources stay editable post-hoc.
+  const locked = selected && (selected.status === 'live' || selected.status === 'completed')
 
   return (
     <div className="wide-panel" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -183,14 +189,19 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                     <span style={{ fontSize: 11.5, color: T2 }}>· {timingCopy(selected)}</span>
                     <span style={{ fontSize: 10, color: T3, marginLeft: 'auto' }}>auto-updates from the times below</span>
                   </div>
+                  {locked && (
+                    <div style={{ fontSize: 10.5, color: T2, background: 'white', border: `1px solid ${BD}`, borderRadius: 8, padding: '7px 10px', marginBottom: 12 }}>
+                      🔒 {selected.status === 'live' ? 'Live' : 'Completed'} sessions are locked — the listing already went out to students. Only the recording and resources can still be added below.
+                    </div>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
                     <Field label="Starts at">
-                      <input type="datetime-local" style={inputStyle} value={toLocal(draft.startAt)}
+                      <input type="datetime-local" disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={toLocal(draft.startAt)}
                         onChange={e => setDraftField('startAt', fromLocal(e.target.value))}
                         onBlur={() => saveField('startAt')} />
                     </Field>
                     <Field label="Ends at">
-                      <input type="datetime-local" style={inputStyle} value={toLocal(draft.endAt)}
+                      <input type="datetime-local" disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={toLocal(draft.endAt)}
                         onChange={e => setDraftField('endAt', fromLocal(e.target.value))}
                         onBlur={() => saveField('endAt')} />
                     </Field>
@@ -230,32 +241,35 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                   )}
                   {/* Per-session access control (PRD P2, pulled forward): freemium sees the
                       card with a PRO lock + upgrade CTA instead of Register */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: 'pointer', width: 'fit-content' }}>
-                    <input type="checkbox" checked={!!selected.paidOnly} onChange={e => onUpdateSession(selectedId, { paidOnly: e.target.checked })} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#8a5200' }}>👑 Paid members only</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, cursor: locked ? 'not-allowed' : 'pointer', width: 'fit-content' }}>
+                    <input type="checkbox" disabled={locked} checked={!!selected.paidOnly} onChange={e => onUpdateSession(selectedId, { paidOnly: e.target.checked })} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: locked ? T3 : '#8a5200' }}>👑 Paid members only</span>
                     <span style={{ fontSize: 10, color: T3 }}>— freemium users see it locked with an upgrade CTA</span>
                   </label>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
                   <Field label="Host name">
-                    <input style={inputStyle} value={draft.host} onChange={e => setDraftField('host', e.target.value)} onBlur={() => saveField('host')} placeholder="e.g. Aman Singhal" />
+                    <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.host} onChange={e => setDraftField('host', e.target.value)} onBlur={() => saveField('host')} placeholder="e.g. Aman Singhal" />
                   </Field>
                   <Field label="Topic">
-                    <input style={inputStyle} value={draft.topic} onChange={e => setDraftField('topic', e.target.value)} onBlur={() => saveField('topic')} placeholder="Session topic" />
+                    <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.topic} onChange={e => setDraftField('topic', e.target.value)} onBlur={() => saveField('topic')} placeholder="Session topic" />
                   </Field>
                   <Field label="Topper name (optional)">
-                    <input style={inputStyle} value={draft.topperName} onChange={e => setDraftField('topperName', e.target.value)} onBlur={() => saveField('topperName')} placeholder="e.g. Rohit Meena" />
+                    <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.topperName} onChange={e => setDraftField('topperName', e.target.value)} onBlur={() => saveField('topperName')} placeholder="e.g. Rohit Meena" />
                   </Field>
                   <Field label="NORCET rank (optional)">
-                    <input style={inputStyle} value={draft.topperRank} onChange={e => setDraftField('topperRank', e.target.value)} onBlur={() => saveField('topperRank')} placeholder="e.g. AIR 15, NORCET 9" />
+                    <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.topperRank} onChange={e => setDraftField('topperRank', e.target.value)} onBlur={() => saveField('topperRank')} placeholder="e.g. AIR 15, NORCET 9" />
                   </Field>
                   <Field label="YouTube embed link/ID">
-                    <input style={inputStyle} value={draft.youtubeEmbedId} onChange={e => setDraftField('youtubeEmbedId', e.target.value)} onBlur={() => saveField('youtubeEmbedId')} placeholder="YouTube video ID" />
+                    <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.youtubeEmbedId} onChange={e => setDraftField('youtubeEmbedId', e.target.value)} onBlur={() => saveField('youtubeEmbedId')} placeholder="YouTube video ID" />
                   </Field>
                   <Field label="Study material (file or link)">
-                    <input style={inputStyle} value={draft.studyMaterialUrl} onChange={e => setDraftField('studyMaterialUrl', e.target.value)} onBlur={() => saveField('studyMaterialUrl')} placeholder="Leave blank until ready — shows a placeholder, not an error" />
+                    <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.studyMaterialUrl} onChange={e => setDraftField('studyMaterialUrl', e.target.value)} onBlur={() => saveField('studyMaterialUrl')} placeholder="Leave blank until ready — shows a placeholder, not an error" />
                   </Field>
+                  {/* Deliberately never locked — recordings are only ever uploaded once a
+                      session has ended, so this is the one field a Completed session needs
+                      to stay writable for */}
                   <Field label="Recording (uploaded after session ends)">
                     <input style={inputStyle} value={draft.recordingUrl} onChange={e => setDraftField('recordingUrl', e.target.value)} onBlur={() => saveField('recordingUrl')} placeholder="/recordings/session.mp4" />
                   </Field>
@@ -273,16 +287,16 @@ export default function AdminPanel({ sessions, onUpdateSession, onCreateSession,
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Field label="Thumbnail (shown on every webinar card)">
-                      <input style={inputStyle} value={draft.thumbnailUrl} onChange={e => setDraftField('thumbnailUrl', e.target.value)} onBlur={() => saveField('thumbnailUrl')} placeholder="Image URL — or pull it from the YouTube video" />
+                      <input disabled={locked} style={locked ? lockedInputStyle : inputStyle} value={draft.thumbnailUrl} onChange={e => setDraftField('thumbnailUrl', e.target.value)} onBlur={() => saveField('thumbnailUrl')} placeholder="Image URL — or pull it from the YouTube video" />
                     </Field>
                     <button
-                      disabled={!draft.youtubeEmbedId}
+                      disabled={!draft.youtubeEmbedId || locked}
                       onClick={() => {
                         const url = `https://img.youtube.com/vi/${draft.youtubeEmbedId}/hqdefault.jpg`
                         setDraft(d => ({ ...d, thumbnailUrl: url }))
                         onUpdateSession(selectedId, { thumbnailUrl: url })
                       }}
-                      style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${draft.youtubeEmbedId ? PB : BD}`, background: draft.youtubeEmbedId ? PL : 'white', color: draft.youtubeEmbedId ? PD : T3, fontSize: 11, fontWeight: 700, cursor: draft.youtubeEmbedId ? 'pointer' : 'not-allowed' }}>
+                      style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${draft.youtubeEmbedId && !locked ? PB : BD}`, background: draft.youtubeEmbedId && !locked ? PL : 'white', color: draft.youtubeEmbedId && !locked ? PD : T3, fontSize: 11, fontWeight: 700, cursor: draft.youtubeEmbedId && !locked ? 'pointer' : 'not-allowed' }}>
                       Use YouTube thumbnail
                     </button>
                   </div>

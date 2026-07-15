@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Home from './Home'
 import Tests from './Tests'
 import WebinarTab from './WebinarTab'
@@ -35,6 +35,11 @@ export default function StudentApp({
 
   const currentSession = sessions.find(s => s.id === currentId) || null
   const attendedCount = attendedCountFrom(webinarActions)
+
+  // Referral's reward is a free test/video — nothing in it for a paid member, who already
+  // has both. The entry banner is hidden for them, but the demo's Freemium/Paid toggle can
+  // still flip mid-screen, so bounce out defensively rather than leave a dead-end open.
+  useEffect(() => { if (isPaidUser && screen === 'referral') goTo('webinar') }, [isPaidUser, screen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openWebinar = (session, from = 'webinar') => {
     setCurrentId(session.id)

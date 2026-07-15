@@ -96,18 +96,30 @@ export function smoothPath(pts) {
 
 // Mira, the NPrep mascot, explains the game mechanics story-mode style (Clash of Clans-
 // style guide character) — tap to advance, skippable at any point. Shown once per device
-// (shared across the rewards journey and referral screens via the same flag), replayable
-// via a small "?" hint icon on either screen.
+// per screen (separate scoped flags), replayable via a small "?" hint icon on either
+// screen. Each screen gets its own copy — the journey is about *her own* discipline and
+// discount, the referral is about *bringing others along* — so reusing one script across
+// both would either genericize the journey pitch or make the referral ask feel bolted on.
 const MIRA_SEEN_KEY = 'nprep_mira_intro_seen'
 // Copy is written for tier-2/3 aspirants grinding toward a government nursing post
 // (NORCET etc.) — nudges effort and consistency without ever sounding like a corporate
 // rewards pitch. Motivation stays understated, one small idea per line.
-export const MASCOT_MESSAGES = [
+export const MASCOT_MESSAGES_JOURNEY = [
   "Hi, I'm Mira! No coaching centre, no problem — this is your NORCET prep, right here.",
   'Every live session and quiz you clear moves you a little closer to that Gold seat — and a real discount along the way.',
-  'Know someone else prepping for their government posting? Share your code — once they join a session, you both win a free test or video.',
-  'Tap any milestone to see exactly how close you are.',
+  'Tap any milestone on the map to see exactly what unlocks next.',
+  "You've already come further than the version of you who hadn't started.",
   'Lakhs will apply. Selection favours the ones who kept showing up — let’s go.',
+]
+// Referral-specific — the ask (invite 3 friends) and the payoff (free test/video, not a
+// discount) both differ from the journey, so the framing does too: less "your discipline",
+// more "bring your batch along" — studying for a government post is less lonely in a group.
+export const MASCOT_MESSAGES_REFERRAL = [
+  "Hi, I'm Mira! NORCET prep is easier when you're not doing it alone.",
+  'Share your code with 3 friends also aiming for a government posting. Once they join with it and attend a session, you both win — pick a free test or a free video.',
+  'No cost to either of you — just NPrep noticing who shows up together.',
+  'Tap a friend\'s name to see exactly where they are in the process.',
+  "The best batches aren't found in a coaching centre. Go build yours.",
 ]
 
 // Each screen gets its own one-time greeting (scoped key) so Mira introduces herself the
@@ -155,11 +167,11 @@ function useChromaKeyedImage(src, threshold = 24) {
   return url
 }
 
-export function MiraIntro({ open, onDone }) {
+export function MiraIntro({ open, onDone, messages }) {
   const [idx, setIdx] = useState(0)
   const mascotUrl = useChromaKeyedImage('/mascot-mira.png')
   if (!open) return null
-  const last = idx === MASCOT_MESSAGES.length - 1
+  const last = idx === messages.length - 1
   const advance = () => { if (last) onDone(); else setIdx(i => i + 1) }
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 90, cursor: 'pointer' }} onClick={advance}>
@@ -173,16 +185,19 @@ export function MiraIntro({ open, onDone }) {
         <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
       </div>
 
-      {/* Speech bubble sits beside her head, tail rotated to angle down-and-left at her
-          mouth — a straight-down nub only lines up with the mouth at one exact viewport
-          size, an angled tail keeps pointing roughly the right way across screen sizes */}
-      <div key={idx} style={{ position: 'absolute', left: '33%', bottom: '33%', maxWidth: '60%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
-        <div style={{ color: T1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45 }}>{MASCOT_MESSAGES[idx]}</div>
+      {/* Speech bubble sits beside her head with a tail pointing down-left at her mouth.
+          Earlier attempts rotated a CSS border-triangle with `transform: rotate()` — that
+          pivots around the shape's own bounding box, which for a downward triangle swings
+          the tip back toward the bubble instead of away from it (looks "inside" the
+          bubble). A clip-path polygon has no pivot to get wrong: the coordinates ARE the
+          tip, so it always points exactly where drawn. */}
+      <div key={idx} style={{ position: 'absolute', left: '36%', bottom: '30%', maxWidth: '60%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
+        <div style={{ color: T1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45 }}>{messages[idx]}</div>
         <div style={{ textAlign: 'right', marginTop: 9 }}>
           <span style={{ fontSize: 9, color: T3, fontWeight: 600 }}>Tap to {last ? 'start' : 'continue'}</span>
         </div>
-        <span style={{ position: 'absolute', left: 6, bottom: -8, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `15px solid ${PD}`, transform: 'rotate(-40deg)', transformOrigin: 'top center' }} />
-        <span style={{ position: 'absolute', left: 8, bottom: -4, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '12px solid white', transform: 'rotate(-40deg)', transformOrigin: 'top center' }} />
+        <div style={{ position: 'absolute', left: 2, bottom: -19, width: 28, height: 23, background: PD, clipPath: 'polygon(40% 0%, 100% 0%, 0% 100%)' }} />
+        <div style={{ position: 'absolute', left: 5, bottom: -14, width: 22, height: 17, background: 'white', clipPath: 'polygon(40% 0%, 100% 0%, 0% 100%)' }} />
       </div>
     </div>
   )
