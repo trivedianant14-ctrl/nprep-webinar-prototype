@@ -99,12 +99,15 @@ export function smoothPath(pts) {
 // (shared across the rewards journey and referral screens via the same flag), replayable
 // via a small "?" hint icon on either screen.
 const MIRA_SEEN_KEY = 'nprep_mira_intro_seen'
+// Copy is written for tier-2/3 aspirants grinding toward a government nursing post
+// (NORCET etc.) — nudges effort and consistency without ever sounding like a corporate
+// rewards pitch. Motivation stays understated, one small idea per line.
 export const MASCOT_MESSAGES = [
-  "Hi, I'm Mira! Let's turn your NORCET prep into rewards.",
-  'Attend live sessions, read study material, and clear quizzes — each one pushes your discount toward 40% off Gold.',
-  "Invite 3 friends with your code. Once they join and watch a session, you win — pick a free test or a free video.",
-  'Tap any milestone on the map to see exactly what’s next.',
-  'Your dream career is waiting — let’s start learning.',
+  "Hi, I'm Mira! No coaching centre, no problem — this is your NORCET prep, right here.",
+  'Every live session and quiz you clear moves you a little closer to that Gold seat — and a real discount along the way.',
+  'Know someone else prepping for their government posting? Share your code — once they join a session, you both win a free test or video.',
+  'Tap any milestone to see exactly how close you are.',
+  'Lakhs will apply. Selection favours the ones who kept showing up — let’s go.',
 ]
 
 // Each screen gets its own one-time greeting (scoped key) so Mira introduces herself the
@@ -156,23 +159,24 @@ export function MiraIntro({ open, onDone }) {
     <div style={{ position: 'absolute', inset: 0, zIndex: 90, cursor: 'pointer' }} onClick={advance}>
       <button onClick={e => { e.stopPropagation(); onDone() }} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(6,12,35,0.55)', border: 'none', color: 'white', fontSize: 10.5, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', zIndex: 2 }}>Skip ✕</button>
 
-      {/* Mira, story-mode guide character anchored bottom-left (Clash of Clans-style) */}
-      <div style={{ position: 'absolute', left: 4, bottom: 0, height: '45%', display: 'flex', alignItems: 'flex-end', zIndex: 1 }}>
-        <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
+      {/* Mira, story-mode guide character pinned to the extreme left edge (Clash of Clans-
+          style) — the source render has a lot of dead transparent canvas around her on a
+          square frame, so we crop+shift it rather than sizing the raw square, otherwise she
+          reads as centered no matter how far left the wrapper is placed. A sliver bleeds off
+          the screen edge, matching how mobile-game guide characters are cropped by frame. */}
+      <div style={{ position: 'absolute', left: '-4%', bottom: 0, height: '38%', aspectRatio: '0.68', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', zIndex: 1, pointerEvents: 'none' }}>
+        <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', maxWidth: 'none', display: 'block', transform: 'translateX(-19%)', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
       </div>
 
-      {/* Speech bubble sits just above her head with the tail dropping to her mouth,
-          rather than a caption box that covers her face */}
-      <div key={idx} style={{ position: 'absolute', left: '26%', bottom: '46%', maxWidth: '62%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
+      {/* Speech bubble sits beside her head at mouth height, tail tucked to the bubble's
+          left edge pointing back down at her mouth — not a caption box floating above her */}
+      <div key={idx} style={{ position: 'absolute', left: '38%', bottom: '31%', maxWidth: '58%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
         <div style={{ color: T1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45 }}>{MASCOT_MESSAGES[idx]}</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {MASCOT_MESSAGES.map((_, i) => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: i === idx ? PD : '#D8E2F5' }} />)}
-          </div>
+        <div style={{ textAlign: 'right', marginTop: 9 }}>
           <span style={{ fontSize: 9, color: T3, fontWeight: 600 }}>Tap to {last ? 'start' : 'continue'}</span>
         </div>
-        <span style={{ position: 'absolute', left: 22, bottom: -13, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `14px solid ${PD}` }} />
-        <span style={{ position: 'absolute', left: 24, bottom: -10, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '11px solid white' }} />
+        <span style={{ position: 'absolute', left: 16, bottom: -13, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `14px solid ${PD}` }} />
+        <span style={{ position: 'absolute', left: 18, bottom: -10, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '11px solid white' }} />
       </div>
     </div>
   )
