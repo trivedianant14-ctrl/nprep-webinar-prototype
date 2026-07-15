@@ -16,6 +16,7 @@ export default function StudentApp({
   onRegister, onJoinLive, onCompleteStudyMaterial, onEndSession, onCompleteQuiz, onSubmitFollowUp,
   shareCredits, unlockedSessionIds, onShare, onUnlock,
   referralCode, referrals, referralReward, onInviteFriend, onAdvanceReferral, onClaimReferralReward,
+  onResetJourney,
   onExit,
 }) {
   const [screen, setScreen] = useState('home')
@@ -79,6 +80,7 @@ export default function StudentApp({
             attendedCount={attendedCount}
             openWebinar={(session) => openWebinar(session, 'webinar')}
             onOpenReferrals={() => goTo('referral')}
+            onResetJourney={onResetJourney}
             onExit={() => goTo('home')}
           />
         )}

@@ -4,9 +4,26 @@ import { getOrCreateReferralCode } from './_lib/referral.js'
 import { DISCOUNT_PER_ACTION, SESSION_DISCOUNT_CAP, PROGRAM_DISCOUNT_CAP, DEMO_STUDENT_KEY } from './_lib/constants.js'
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'GET' && req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' })
 
   const db = sql()
+
+  // DELETE /api/state — "restore journey" for the demo account. This prototype has no
+  // real auth (every visitor is DEMO_STUDENT_KEY), so progress is recorded server-side
+  // and survives a hard reload. Wipes only the demo student's own rows — session
+  // schedules and the other seeded registrants are untouched — so testers can replay
+  // the journey/referral flow from a clean slate on demand.
+  if (req.method === 'DELETE') {
+    await Promise.all([
+      db`DELETE FROM registrations WHERE student_key = ${DEMO_STUDENT_KEY}`,
+      db`DELETE FROM actions WHERE student_key = ${DEMO_STUDENT_KEY}`,
+      db`DELETE FROM shares WHERE student_key = ${DEMO_STUDENT_KEY}`,
+      db`DELETE FROM unlocked_recordings WHERE student_key = ${DEMO_STUDENT_KEY}`,
+      db`DELETE FROM referrals WHERE referrer_key = ${DEMO_STUDENT_KEY}`,
+      db`DELETE FROM referral_rewards WHERE student_key = ${DEMO_STUDENT_KEY}`,
+    ])
+    return res.status(204).end()
+  }
   const [sessions, registrations, demoRegistrations, actions, notifications, shares, unlocks, resources, referralCode, referrals, referralReward] = await Promise.all([
     db`SELECT * FROM sessions ORDER BY id`,
     db`SELECT * FROM registrations ORDER BY registered_at`,

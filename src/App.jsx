@@ -74,6 +74,10 @@ export default function App() {
   const inviteFriend = async (friendName) => { await api('/referrals', { method: 'POST', body: { op: 'invite', friendName } }); await refresh() }
   const advanceReferral = async (id) => { await api('/referrals', { method: 'POST', body: { op: 'advance', id } }); await refresh() }
   const claimReferralReward = async (rewardType) => { await api('/referrals', { method: 'POST', body: { op: 'claim', rewardType } }); await refresh() }
+  // "Restore journey" — this prototype has no real auth, so the demo account's progress
+  // is recorded server-side and survives a hard reload. Wipes it so testers can replay
+  // the journey/referral flow (and Mira's intro) from a clean slate on demand.
+  const resetJourney = async () => { await api('/state', { method: 'DELETE' }); await refresh() }
 
   const exitToLanding = () => setTopScreen('landing')
 
@@ -119,6 +123,7 @@ export default function App() {
             onInviteFriend={inviteFriend}
             onAdvanceReferral={advanceReferral}
             onClaimReferralReward={claimReferralReward}
+            onResetJourney={resetJourney}
             onExit={exitToLanding}
           />
         </div>

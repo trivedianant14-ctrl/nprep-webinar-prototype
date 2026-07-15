@@ -113,6 +113,12 @@ export const MASCOT_MESSAGES = [
 // Each screen gets its own one-time greeting (scoped key) so Mira introduces herself the
 // first time a student opens the journey map AND the first time they open referrals,
 // rather than only ever once across the whole app. The "?" hint replays her on either.
+// Clears every scoped "seen" flag — used by the journey's restore action so a reset
+// also brings Mira's intro back, instead of just wiping server-side progress.
+export function resetMiraIntroSeen() {
+  for (const scope of ['journey', 'referral']) window.localStorage.removeItem(`${MIRA_SEEN_KEY}_${scope}`)
+}
+
 export function useMiraIntro(scope = 'default') {
   const key = `${MIRA_SEEN_KEY}_${scope}`
   const [open, setOpen] = useState(() => typeof window !== 'undefined' && !window.localStorage.getItem(key))
@@ -167,15 +173,16 @@ export function MiraIntro({ open, onDone }) {
         <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
       </div>
 
-      {/* Speech bubble sits beside her head at mouth height, tail tucked to the bubble's
-          left edge pointing back down at her mouth — not a caption box floating above her */}
-      <div key={idx} style={{ position: 'absolute', left: '38%', bottom: '31%', maxWidth: '58%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
+      {/* Speech bubble sits beside her head, tail rotated to angle down-and-left at her
+          mouth — a straight-down nub only lines up with the mouth at one exact viewport
+          size, an angled tail keeps pointing roughly the right way across screen sizes */}
+      <div key={idx} style={{ position: 'absolute', left: '33%', bottom: '33%', maxWidth: '60%', background: 'white', border: `2px solid ${PD}`, borderRadius: 18, padding: '12px 15px', boxShadow: '0 6px 18px rgba(0,0,0,0.3)', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both', zIndex: 2 }}>
         <div style={{ color: T1, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45 }}>{MASCOT_MESSAGES[idx]}</div>
         <div style={{ textAlign: 'right', marginTop: 9 }}>
           <span style={{ fontSize: 9, color: T3, fontWeight: 600 }}>Tap to {last ? 'start' : 'continue'}</span>
         </div>
-        <span style={{ position: 'absolute', left: 16, bottom: -13, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `14px solid ${PD}` }} />
-        <span style={{ position: 'absolute', left: 18, bottom: -10, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '11px solid white' }} />
+        <span style={{ position: 'absolute', left: 6, bottom: -8, width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `15px solid ${PD}`, transform: 'rotate(-40deg)', transformOrigin: 'top center' }} />
+        <span style={{ position: 'absolute', left: 8, bottom: -4, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '12px solid white', transform: 'rotate(-40deg)', transformOrigin: 'top center' }} />
       </div>
     </div>
   )

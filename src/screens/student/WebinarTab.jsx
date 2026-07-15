@@ -117,7 +117,7 @@ function PastCard({ session, isPaidUser, isUnlocked, onOpen }) {
   )
 }
 
-export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, attendedCount, openWebinar, onOpenReferrals, onExit }) {
+export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser, toggleIsPaidUser, webinarDiscountPct, programCap, shareCredits, unlockedSessionIds, attendedCount, openWebinar, onOpenReferrals, onResetJourney, onExit }) {
   // Re-render every 30s so countdown chips stay honest between server polls.
   const [tick, setTick] = useState(0)
   const [showJourney, setShowJourney] = useState(false)
@@ -258,6 +258,7 @@ export default function WebinarTab({ sessions, registeredWebinarIds, isPaidUser,
           attendedCount={attendedCount}
           programCap={programCap}
           onClose={() => setShowJourney(false)}
+          onResetJourney={onResetJourney}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { P, PD, G, T1, T2, T3, JOURNEY, journeyStatus, GRASS_BG, smoothPath, useMiraIntro, MiraIntro } from './shared'
+import { useEffect, useRef, useState } from 'react'
+import { P, PD, G, T1, T2, T3, JOURNEY, journeyStatus, GRASS_BG, smoothPath, useMiraIntro, MiraIntro, resetMiraIntroSeen } from './shared'
 
 // A pictorial student-to-nurse journey: each node's icon is a stage of that becoming
 // (backpack → books → studying → clinic → exam → cap → nurse), reaching the 40%-off
@@ -28,14 +28,30 @@ const DECOR = [
   { x: 300, y: 60, e: '☁️', s: 40 }, { x: 60, y: 40, e: '☁️', s: 34 },
 ]
 
-export default function RewardsJourney({ discountPct, attendedCount, programCap, onClose }) {
+export default function RewardsJourney({ discountPct, attendedCount, programCap, onClose, onResetJourney }) {
   const scrollRef = useRef(null)
   const [miraOpen, dismissMira, relaunchMira] = useMiraIntro('journey')
+  const [restoring, setRestoring] = useState(false)
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight }, [])
 
   const { earned, nextIdx } = journeyStatus(discountPct, attendedCount)
   const pathD = smoothPath(POS)
   const next = nextIdx === -1 ? null : JOURNEY[nextIdx]
+
+  // This prototype has no real auth — every visitor is the same demo account, so
+  // progress is recorded server-side and survives a hard reload. Restore wipes it
+  // (and Mira's "seen" flags) so this screen can be replayed from a clean slate.
+  const handleRestore = async () => {
+    if (!window.confirm("Restore this journey to a fresh start? This clears the demo account's live-session attendance, quiz progress, and referrals.")) return
+    setRestoring(true)
+    try {
+      await onResetJourney()
+      resetMiraIntroSeen()
+      relaunchMira()
+    } finally {
+      setRestoring(false)
+    }
+  }
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 70, display: 'flex', flexDirection: 'column', background: GRASS_BG }}>
@@ -48,6 +64,9 @@ export default function RewardsJourney({ discountPct, attendedCount, programCap,
           <div style={{ fontSize: 15, fontWeight: 900, color: 'white' }}>Your Road to NORCET Gold</div>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{discountPct}% closer to Gold · {attendedCount} live session{attendedCount === 1 ? '' : 's'} attended</div>
         </div>
+        <button onClick={handleRestore} disabled={restoring} title="Restore journey to a fresh start" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.35)', color: 'white', width: 26, height: 26, borderRadius: '50%', cursor: restoring ? 'default' : 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: restoring ? 0.6 : 1 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ animation: restoring ? 'spin 0.8s linear infinite' : 'none' }}><path d="M3 12a9 9 0 1 1 2.64 6.36" /><polyline points="3,7 3,12 8,12" /></svg>
+        </button>
         <button onClick={relaunchMira} style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.35)', color: 'white', fontSize: 12, fontWeight: 800, width: 26, height: 26, borderRadius: '50%', cursor: 'pointer', flexShrink: 0 }}>?</button>
         <span style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.35)', color: 'white', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 14, flexShrink: 0 }}>🏆 {programCap}%</span>
       </div>
