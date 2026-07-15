@@ -160,12 +160,11 @@ export function MiraIntro({ open, onDone }) {
       <button onClick={e => { e.stopPropagation(); onDone() }} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(6,12,35,0.55)', border: 'none', color: 'white', fontSize: 10.5, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', zIndex: 2 }}>Skip ✕</button>
 
       {/* Mira, story-mode guide character pinned to the extreme left edge (Clash of Clans-
-          style) — the source render has a lot of dead transparent canvas around her on a
-          square frame, so we crop+shift it rather than sizing the raw square, otherwise she
-          reads as centered no matter how far left the wrapper is placed. A sliver bleeds off
-          the screen edge, matching how mobile-game guide characters are cropped by frame. */}
-      <div style={{ position: 'absolute', left: '-4%', bottom: 0, height: '38%', aspectRatio: '0.68', overflow: 'hidden', display: 'flex', alignItems: 'flex-end', zIndex: 1, pointerEvents: 'none' }}>
-        <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', maxWidth: 'none', display: 'block', transform: 'translateX(-19%)', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
+          style). mascot-mira.png is pre-cropped to her true bounding box (no dead canvas
+          margin around her), so height:auto sizing here already hugs the frame edge —
+          no CSS crop/shift math needed, which is what silently drifted on real devices. */}
+      <div style={{ position: 'absolute', left: '-1%', bottom: 0, height: '40%', display: 'flex', alignItems: 'flex-end', zIndex: 1, pointerEvents: 'none' }}>
+        <img src={mascotUrl || '/mascot-mira.png'} alt="Mira" style={{ height: '100%', width: 'auto', display: 'block', filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.4))', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }} />
       </div>
 
       {/* Speech bubble sits beside her head at mouth height, tail tucked to the bubble's
