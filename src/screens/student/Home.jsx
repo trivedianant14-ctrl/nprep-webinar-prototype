@@ -185,21 +185,12 @@ export default function Home({ sessions, registeredWebinarIds, onOpenWebinarTab,
           </div>
         </div>
 
-        {/* Community — PRD: escape the WhatsApp doubt-group, low-pressure peer replies vs. formal QMS queries */}
+        {/* Community */}
         <div style={{ padding: '26px 16px 28px', textAlign: 'center' }}>
-          <div style={{ fontSize: 11.5, fontWeight: 800, color: '#7C3AED', letterSpacing: '0.02em' }}>YOUR BATCH IS ALREADY HERE</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: INK, lineHeight: 1.15, marginTop: 6 }}>NPrep</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: INK, lineHeight: 1.15 }}>NPrep</div>
           <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.1, background: 'linear-gradient(90deg, #1D5BF0, #7C3AED)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', letterSpacing: '0.01em' }}>COMMUNITY</div>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: T1, marginTop: 8, lineHeight: 1.5, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto' }}>
-            Stuck on today's question? Just ask — no query form, no waiting. Real students, daily discussions, your exam room.
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-            {['🔥 Daily Dose', '📖 Subject Room', '🎯 Exam Room'].map(chip => (
-              <span key={chip} style={{ fontSize: 10.5, fontWeight: 700, color: '#4338CA', background: '#EEF0FE', border: '1px solid #DBE0FB', borderRadius: 20, padding: '5px 11px' }}>{chip}</span>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: T2, marginTop: 12 }}>Over <b>5,000+</b> active students showing up every month</div>
-          <button style={{ marginTop: 14, background: INK, color: 'white', fontSize: 13, fontWeight: 700, padding: '12px 42px', borderRadius: 26, border: 'none', cursor: 'pointer' }}>Join the Conversation</button>
+          <div style={{ fontSize: 11.5, color: T2, marginTop: 8 }}>Over <b>5,000+</b> active students each month</div>
+          <button style={{ marginTop: 14, background: INK, color: 'white', fontSize: 13, fontWeight: 700, padding: '12px 42px', borderRadius: 26, border: 'none', cursor: 'pointer' }}>Join Now</button>
         </div>
       </div>
 
